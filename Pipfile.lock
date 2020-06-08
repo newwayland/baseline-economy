@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "58a0aa8c17847476692de50c22d0b7f78cf95ffdd6b655d7a3bd2a0b40e8c0cc"
+            "sha256": "b3ea00d74ad6e508a0c09f732ec4acdf88c7875240cbe25a631f746c2ca5ea27"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -71,14 +71,6 @@
                 "sha256:a068a21ceac8a4d63dbfd964670474107f541babbd2250d61922f029858365fa"
             ],
             "version": "==2.9"
-        },
-        "jedi": {
-            "hashes": [
-                "sha256:cd60c93b71944d628ccac47df9a60fec53150de53d42dc10a7fc4b5ba6aae798",
-                "sha256:df40c97641cb943661d2db4c33c2e1ff75d491189423249e989bcea4464f3030"
-            ],
-            "index": "pypi",
-            "version": "==0.17.0"
         },
         "jinja2": {
             "hashes": [
@@ -194,13 +186,6 @@
             ],
             "version": "==1.0.4"
         },
-        "parso": {
-            "hashes": [
-                "sha256:158c140fc04112dc45bca311633ae5033c2c2a7b732fa33d0955bad8152a8dd0",
-                "sha256:908e9fae2144a076d72ae4e25539143d40b8e3eafbaeae03c1bfe226f4cdf12c"
-            ],
-            "version": "==0.7.0"
-        },
         "poyo": {
             "hashes": [
                 "sha256:3e2ca8e33fdc3c411cd101ca395668395dd5dc7ac775b8e809e3def9f9fe041a",
@@ -286,6 +271,14 @@
             ],
             "version": "==19.3.0"
         },
+        "jedi": {
+            "hashes": [
+                "sha256:cd60c93b71944d628ccac47df9a60fec53150de53d42dc10a7fc4b5ba6aae798",
+                "sha256:df40c97641cb943661d2db4c33c2e1ff75d491189423249e989bcea4464f3030"
+            ],
+            "index": "pypi",
+            "version": "==0.17.0"
+        },
         "more-itertools": {
             "hashes": [
                 "sha256:558bb897a2232f5e4f8e2399089e35aecb746e1f9191b6584a151647e89267be",
@@ -299,6 +292,13 @@
                 "sha256:998416ba6962ae7fbd6596850b80e17859a5753ba17c32284f67bfff33784181"
             ],
             "version": "==20.4"
+        },
+        "parso": {
+            "hashes": [
+                "sha256:158c140fc04112dc45bca311633ae5033c2c2a7b732fa33d0955bad8152a8dd0",
+                "sha256:908e9fae2144a076d72ae4e25539143d40b8e3eafbaeae03c1bfe226f4cdf12c"
+            ],
+            "version": "==0.7.0"
         },
         "pluggy": {
             "hashes": [

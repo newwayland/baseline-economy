@@ -5,10 +5,10 @@ name = "pypi"
 
 [packages]
 mesa = "*"
-jedi = "*"
 
 [dev-packages]
 pytest = "*"
+jedi = "*"
 
 [requires]
 python_version = "3.8"
