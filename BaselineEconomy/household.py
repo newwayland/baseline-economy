@@ -1,4 +1,5 @@
 from mesa import Agent
+import math
 
 
 # CONFIG
@@ -51,7 +52,10 @@ class HouseholdConfig:
 
 # FUNCTIONS
 
-def planned_consumption_amount(current_liquidity, average_price):
+def planned_consumption_amount(
+    current_liquidity: int,
+    average_price: float
+) -> float:
     """
     Table 2 - Consumption Function
     Calculate the amount of goods planned to be purchased over
@@ -138,12 +142,12 @@ class BaselineEconomyHousehold(Agent):
         supplier_index = range(0, len(self.preferred_suppliers) - 1)
         target_index = self.random.choice(supplier_index)
         change_price = (
-            self.preferred_suppliers[target_index].price *
+            self.preferred_suppliers[target_index].goods_price *
             (1 - HouseholdConfig.zeta)
         )
         # Change supplier if the price is right
         new_firm = self.select_new_firm()
-        if new_firm.price < change_price:
+        if new_firm.goods_price < change_price:
             self.preferred_suppliers[target_index] = new_firm
 
     def find_capable_vendor(self) -> None:
@@ -195,12 +199,15 @@ class BaselineEconomyHousehold(Agent):
         Calculates an integer amount
         """
         average_price = sum(
-            [o.price for o in self.preferred_suppliers]
+            [o.goods_price for o in self.preferred_suppliers]
         ) / len(self.preferred_suppliers)
-        self.planned_daily_consumption = planned_consumption_amount(
-            self.liquidity,
-            average_price
-        ) // self.model.month_length
+        if average_price == 0:
+            self.planned_daily_consumption = math.inf
+        else:
+            self.planned_daily_consumption = planned_consumption_amount(
+                self.liquidity,
+                average_price
+            ) // self.model.month_length
 
 # DAILY
 
@@ -218,7 +225,7 @@ class BaselineEconomyHousehold(Agent):
             # Determine what's available
             # and what the household can afford
             available_amount = vendor.inventory
-            affordable_amount = self.liquidity // vendor.price
+            affordable_amount = self.liquidity // vendor.goods_price
 
             # Blackmark any firm that fails to supply
             # what we want
@@ -257,7 +264,7 @@ class BaselineEconomyHousehold(Agent):
         else:
             self.reservation_wage = max(
                 self.reservation_wage,
-                self.current_wage
+                self.employer.wage_rate
             )
 
 # HELPERS
@@ -267,7 +274,7 @@ class BaselineEconomyHousehold(Agent):
         Select a new firm from the list of firms
         Filter out existing suppliers
         """
-        firms = self.model.firm.agents
+        firms = self.model.firms.agents
         result = self.random.choice(firms)
         # If we've picked a current firm have another go
         while result in self.preferred_suppliers:
@@ -279,7 +286,7 @@ class BaselineEconomyHousehold(Agent):
         Select a new potential employer filter out current
         employ
         """
-        firms = self.model.firm.agents
+        firms = self.model.firms.agents
         result = self.random.choice(firms)
         while self.employer is not None and result == self.employer:
             result = self.random.choice(firms)
@@ -299,7 +306,7 @@ class BaselineEconomyHousehold(Agent):
         # Pull the lists off the zip
         firm_list = next(choice_zip)
         blackmarks = next(choice_zip)
-        return self.random.choices(firm_list, weights=blackmarks)
+        return self.random.choices(firm_list, weights=blackmarks)[0]
 
 # QUERIES
 
@@ -350,4 +357,4 @@ class BaselineEconomyHousehold(Agent):
         """
         Are we at the end of a month?
         """
-        return (self.mode.households.steps + 1) % self.model.month_length == 0
+        return (self.model.households.steps + 1) % self.model.month_length == 0

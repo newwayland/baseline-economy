@@ -1,6 +1,6 @@
-from household import BaselineEconomyHousehold
-from firm import BaselineEconomyFirm
-from schedule import ScheduleByType
+from .household import BaselineEconomyHousehold
+from .firm import BaselineEconomyFirm
+from .schedule import ScheduleByType
 from mesa.time import BaseScheduler, RandomActivation
 from mesa.datacollection import DataCollector
 from mesa import Model
@@ -21,10 +21,6 @@ class BaselineEconomyModel(Model):
             self,
             num_households=1000,
             num_firms=100,
-            initial_reservation_wage=0,
-            initial_offered_wage=0,
-            firm_working_capital=0,
-            initial_household_liquidity=0,
     ):
         super().__init__()
         self.schedule = ScheduleByType(

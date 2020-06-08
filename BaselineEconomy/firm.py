@@ -10,6 +10,18 @@ class FirmConfig:
     # Value not stated in paper
     initial_liquidity = 0
 
+    # Price of goods at each firm at t=0
+    # Value not stated in paper
+    initial_goods_price = 0
+
+    # Amount of inventory in each firm at t=0
+    # Value not stated in paper
+    initial_inventory = 0
+
+    # Initial wage rate at t=0
+    # Value not stated in paper
+    initial_wage_rate = 0
+
 
 class BaselineEconomyFirm(Agent):
     """
@@ -26,6 +38,9 @@ class BaselineEconomyFirm(Agent):
         """
         super().__init__(unique_id, model)
         self.liquidity = FirmConfig.initial_liquidity
+        self.goods_price = FirmConfig.initial_goods_price
+        self.wage_rate = FirmConfig.initial_wage_rate
+        self.inventory = FirmConfig.initial_inventory
 
     def step(self) -> None:
         """
