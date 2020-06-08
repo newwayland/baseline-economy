@@ -1,6 +1,7 @@
 from household import BaselineEconomyHousehold
 from firm import BaselineEconomyFirm
-from mesa.time import RandomActivation
+from schedule import ScheduleByType
+from mesa.time import BaseScheduler, RandomActivation
 from mesa.datacollection import DataCollector
 from mesa import Model
 
@@ -26,8 +27,11 @@ class BaselineEconomyModel(Model):
             initial_household_liquidity=0,
     ):
         super().__init__()
-        self.households = RandomActivation(self)
-        self.firms = RandomActivation(self)
+        self.schedule = ScheduleByType(
+            self,
+            RandomActivation,
+            [BaselineEconomyFirm, BaselineEconomyHousehold]
+        )
         self.month_length = 21
 
         for i in range(num_firms):
@@ -35,19 +39,27 @@ class BaselineEconomyModel(Model):
                 i,
                 self,
             )
-            self.firms.add(agent)
+            self.schedule.add(agent)
 
         for i in range(num_households):
             agent = BaselineEconomyHousehold(
                 i,
                 self,
             )
-            self.households.add(agent)
+            self.schedule.add(agent)
 
         # example data collector
         self.datacollector = DataCollector()
 
         self.datacollector.collect(self)
+
+    @property
+    def firms(self) -> BaseScheduler:
+        return self.schedule.by_type(BaselineEconomyFirm)
+
+    @property
+    def households(self) -> BaseScheduler:
+        return self.schedule.by_type(BaselineEconomyHousehold)
 
     @property
     def num_firms(self) -> int:
@@ -61,6 +73,5 @@ class BaselineEconomyModel(Model):
         """
         A model step. Used for collecting data and advancing the schedule
         """
-        self.firms.step()
-        self.households.step()
+        self.schedule.step()
         self.datacollector.collect(self)
