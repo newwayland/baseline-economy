@@ -54,3 +54,17 @@ class BaselineEconomyFirm(Agent):
         Run the month end firm procedures
         """
         pass
+
+# QUERIES
+
+    def is_month_start(self) -> bool:
+        """
+        Are we at the start of a month?
+        """
+        return self.model.firms.steps % self.model.month_length == 0
+
+    def is_month_end(self) -> bool:
+        """
+        Are we at the end of a month?
+        """
+        return (self.model.firms.steps + 1) % self.model.month_length == 0

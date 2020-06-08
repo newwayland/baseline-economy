@@ -50,7 +50,7 @@ class ScheduleByType(BaseScheduler):
         Executes the step of each agent grouped by type in order
 
         """
-        for agent_class in self._agents:
+        for agent_class in self._agents.values():
             agent_class.step()
         self.steps += 1
         self.time += 1
