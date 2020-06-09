@@ -52,6 +52,13 @@ class HouseholdConfig:
 
 # FUNCTIONS
 
+def labour_supply() -> int:
+    """
+    Amount of labour power supplied by a household per day
+    """
+    return 1
+
+
 def planned_consumption_amount(
     current_liquidity: int,
     average_price: float
@@ -267,7 +274,17 @@ class BaselineEconomyHousehold(Agent):
                 self.employer.wage_rate
             )
 
+# FIRM QUERIES
+
+    @property
+    def labour_amount():
+        """
+        Amount of labour power available from a household
+        """
+        return labour_supply()
+
 # HELPERS
+
 
     def select_new_firm(self):
         """

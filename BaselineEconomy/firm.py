@@ -1,5 +1,8 @@
 from mesa import Agent
+from random import Random
 
+
+# CONFIG
 
 class FirmConfig:
     """
@@ -21,6 +24,62 @@ class FirmConfig:
     # Initial wage rate at t=0
     # Value not stated in paper
     initial_wage_rate = 0
+
+    # Number of months of filled positions
+    # before wage will be reduced
+    gamma = 24
+
+    # Upper bound for the wage adjustment
+    delta = 0.019
+
+    # Range that inventories can be maintained
+    # relative to demand
+    inventory_uphi = 1
+    inventory_lphi = 0.25
+
+    # Range that prices can be marked up over
+    # costs
+    goods_price_uphi = 1.15
+    good_price_lphi = 1.025
+
+    # Upper bound for the price adjustment
+    upsilon = 0.02
+
+    # Probability of changing the goods price
+    theta = 0.75
+
+    # Productivity multiple by which labour power
+    # is turned into labour output
+    #
+    # "Positive technology parameter"
+    lambda_val = 3
+
+    # Percentage of income to reserve to cover bad times
+    chi = 0.1
+
+
+# FUNCTIONS
+
+
+def production_amount(labour_power: int) -> int:
+    """
+    Amount of labour output per unit of labour power
+    """
+    return FirmConfig.lambda_val * labour_power
+
+
+def wage_adjustment(rand_generator: Random) -> float:
+    """
+    Delta percentage amount to change the wage up or down
+    """
+    return rand_generator.uniform(0, FirmConfig.delta)
+
+
+def price_adjustment(rand_generator: Random) -> float:
+    """
+    Delta percentage amount to change the price up or down
+    """
+    return rand_generator.uniform(0, FirmConfig.upsilon)
 
 
 class BaselineEconomyFirm(Agent):
@@ -56,7 +115,7 @@ class BaselineEconomyFirm(Agent):
         """
         Run the month start firm procedures
         """
-        pass
+        
 
     def day(self) -> None:
         """
