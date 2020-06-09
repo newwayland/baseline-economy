@@ -6,7 +6,7 @@
 - The initial values of the reservation wage and liquidity for Households are not specified.
 
 ## Assumptions
-- Labour supply (lh) is fixed at 1 unit per household per tick
+- Labour supply (l<sub>h</sub>) is fixed at 1 unit per household per tick
 - A single model tick is a Day
 - There are 21 Days is a Month
 - Households only work for one firm at a time (number of Type B connections = 1)
@@ -21,7 +21,7 @@
 - Employees of a failing firm will take an immediate pay cut to keep their jobs
 
 ## Issues
-- Equation (12) seems redundant. Any x raised to a power y where `0 < y < 1` will always be less than x
+- Equation `(12)` seems redundant. Any x raised to a power y where `0 < y < 1` will always be less than x
 - Since purchase is done daily, the amount of consumption in a day appears to be rounded down to an integer at that point and not before. Fractions of a good cannot be purchased. Monthly consumption changes per household are therefore in steps of 21.
 - Blackmarked firms can already have been removed by the previous price competition step.
 - The wage choice of the unemployed is ambiguous. It talks about a currently received wage, but as the household is unemployed they are not receiving a wage at that point. Other context suggests this should be “reserved wage”.
