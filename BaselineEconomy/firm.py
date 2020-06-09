@@ -25,6 +25,8 @@ class FirmConfig:
     # Value not stated in paper
     initial_wage_rate = 0
 
+    # Calibration values (Table 1)
+    #
     # Number of months of filled positions
     # before wage will be reduced
     gamma = 24
@@ -40,7 +42,7 @@ class FirmConfig:
     # Range that prices can be marked up over
     # costs
     goods_price_uphi = 1.15
-    good_price_lphi = 1.025
+    goods_price_lphi = 1.025
 
     # Upper bound for the price adjustment
     upsilon = 0.02
@@ -50,7 +52,6 @@ class FirmConfig:
 
     # Productivity multiple by which labour power
     # is turned into labour output
-    #
     # "Positive technology parameter"
     lambda_val = 3
 
@@ -100,6 +101,11 @@ class BaselineEconomyFirm(Agent):
         self.goods_price = FirmConfig.initial_goods_price
         self.wage_rate = FirmConfig.initial_wage_rate
         self.inventory = FirmConfig.initial_inventory
+        self.worker_on_notice = None
+        self.workers = []
+        self.has_open_position = False
+        self.months_since_hire_failure = 0
+        self.previous_inventory = 0
 
     def step(self) -> None:
         """
@@ -115,7 +121,9 @@ class BaselineEconomyFirm(Agent):
         """
         Run the month start firm procedures
         """
-        
+        set_wage_rate()
+        manage_workforce()
+        set_goods_price()
 
     def day(self) -> None:
         """
@@ -128,6 +136,14 @@ class BaselineEconomyFirm(Agent):
         Run the month end firm procedures
         """
         pass
+
+# HELPERS
+
+    def set_wage_rate(self) -> None:
+        if self.should_raise_wage():
+            self.wage_rate *= (1 + wage_adjustment(self.random))
+        elif self.should_lower_wage():
+            self.wage_rate *= (1 - wage_adjustment(self.random))
 
 # QUERIES
 
@@ -142,3 +158,17 @@ class BaselineEconomyFirm(Agent):
         Are we at the end of a month?
         """
         return (self.model.firms.steps + 1) % self.model.month_length == 0
+
+    def should_raise_wage(self) -> bool:
+        """
+        Does the firm still have a position open
+        and needs a better wage?
+        """
+        self.has_open_position
+
+    def should_lower_wage(self) -> bool:
+        """
+        Has the firm been continually successful in hiring
+        and can drop its wage rate
+        """
+        self.months_since_hire_failure > FirmConfig.gamma

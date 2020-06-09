@@ -19,6 +19,7 @@
 - Households in work will only look for jobs at no more than 1 other firm per month
 - Unemployed Households look for jobs at no more than 5 firms per month
 - Employees of a failing firm will take an immediate pay cut to keep their jobs
+- Wages are raised pre-emptively for all workers if hiring fails
 
 ## Issues
 - Equation `(12)` seems redundant. Any x raised to a power y where `0 < y < 1` will always be less than x

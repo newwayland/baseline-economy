@@ -26,6 +26,7 @@ class HouseholdConfig:
     satisfaction_fraction = 0.95
 
     # Calibration values (Table 1)
+    #
     # Amount new firm has to be cheaper to replace old firm
     zeta = 0.01
 
@@ -342,7 +343,7 @@ class BaselineEconomyHousehold(Agent):
         tempt people to move (including out of unemployment)
         """
         return (
-            new_employer.has_open_position() and
+            new_employer.has_open_position and
             (
                 new_employer.wage_rate > self.reservation_wage or
                 (self.employer is not None and
