@@ -157,16 +157,20 @@ class BaselineEconomyFirm(Agent):
         """
         Deal with hiring and firing decisions
         """
+        # If inventory is too high, either cancel outstanding notice
+        # or offer a new position
         if self.inventory < self.inventory_floor():
-            self.has_open_position = True
-        elif self.inventory > self.inventory_ceiling():
-            self.give_notice()
+            self.has_open_position = self.worker_on_notice is None
+            self.worker_on_notice = None
 
+        # If a worker is on notice, fire them
         if self.worker_on_notice is not None:
-            if self.has_open_position:
-                self.worker_on_notice = None
-            else:
-                self.fire_worker()
+            self.fire_worker()
+
+        # Give notice to a worker if inventories are too high
+        if self.inventory > self.inventory_ceiling():
+            self.has_open_position = False
+            self.give_notice()
 
     def inventory_floor(self) -> float:
         """
@@ -222,11 +226,11 @@ class BaselineEconomyFirm(Agent):
         Does the firm still have a position open
         and needs a better wage?
         """
-        self.has_open_position
+        return self.has_open_position
 
     def should_lower_wage(self) -> bool:
         """
         Has the firm been continually successful in hiring
         and can drop its wage rate
         """
-        self.months_since_hire_failure > FirmConfig.gamma
+        return self.months_since_hire_failure >= FirmConfig.gamma
