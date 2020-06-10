@@ -112,3 +112,21 @@ def test_wage_decrease():
     assert firm.should_lower_wage()
     firm.set_wage_rate()
     assert (1 - FirmConfig.delta <= firm.wage_rate < 1)
+
+
+def test_price_increase():
+    firm = initial_firm()
+    firm.current_demand = 1
+    firm.goods_price = 1
+    firm.inventory = 0
+    firm.set_goods_price()
+    assert (1 < firm.goods_price <= 1 + FirmConfig.upsilon)
+
+
+def test_price_decrease():
+    firm = initial_firm()
+    firm.current_demand = 1
+    firm.goods_price = 1
+    firm.inventory = 100
+    firm.set_goods_price()
+    assert (1 - FirmConfig.upsilon <= firm.goods_price < 1)

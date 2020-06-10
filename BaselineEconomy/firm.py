@@ -123,7 +123,9 @@ class BaselineEconomyFirm(Agent):
         """
         self.set_wage_rate()
         self.manage_workforce()
-        self.set_goods_price()
+        # Is the firm confident enough to change its price?
+        if self.random.random() <= FirmConfig.theta:
+            self.set_goods_price()
         # Reset demand counter
         self.current_demand = 0
 
@@ -200,12 +202,42 @@ class BaselineEconomyFirm(Agent):
         """
         P45 time
         """
-        self.workers.remove(self.worker_on_notice)
-        self.worker_on_notice.sacked()
+        self.quit_job(self.worker_on_notice)
         self.worker_on_notice = None
 
+    def quit_job(self, worker) -> None:
+        """
+        Clear up when a worker leaves the firm
+        """
+        self.workers.remove(worker)
+        worker.employer = None
+
+    def hire(self, worker) -> None:
+        """
+        Add worker to the list of current employees
+        """
+        self.workers.append(worker)
+        worker.employer = self
+        self.has_open_position = False
+
     def set_goods_price(self) -> None:
-        pass
+        """
+        Adjust the price up if inventories are too low
+        and down if inventories are too high
+        """
+        if self.inventory < self.inventory_floor():
+            self.goods_price *= (1 + price_adjustment(self.random))
+        elif self.inventory > self.inventory_ceiling():
+            self.goods_price *= (1 - price_adjustment(self.random))
+
+    def sell_goods(self, quantity, total_price):
+        """
+        Update inventory and demand
+        then bank the cash
+        """
+        self.inventory -= quantity
+        self.current_demand += quantity
+        self.liquidity += total_price
 
 # QUERIES
 

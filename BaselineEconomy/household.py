@@ -121,6 +121,8 @@ class BaselineEconomyHousehold(Agent):
         """
         self.find_cheaper_vendor()
         self.find_capable_vendor()
+        # Clear the blackmark list
+        self.blackmarked_firms = []
         self.find_work()
         self.plan_consumption()
 
@@ -165,8 +167,6 @@ class BaselineEconomyHousehold(Agent):
         # Check if the household has held a grudge
         if (not self.blackmarked_firms or
                 self.random.random() >= HouseholdConfig.phi_quant):
-            # Clear the blackmark list
-            self.blackmarked_firms = []
             return
 
         target_firm = self.select_blackmarked_firm()
@@ -178,26 +178,27 @@ class BaselineEconomyHousehold(Agent):
         except ValueError:
             pass
 
-        # Clear the blackmark list on this path as well
-        self.blackmarked_firms = []
-
     def find_work(self) -> None:
+        '''
+        Decide if the household is going to look for work
+        '''
+        # Is the household in the jobhunting mood?
+        if not self.is_happy_at_work():
+            self.look_for_work()
+
+    def look_for_work(self) -> None:
         """
         Look for another job
         Look harder if the household is unemployed or
         dissatisfied with the current job
         """
-        # Is the household in the jobhunting mood?
-        if self.is_happy_at_work():
-            return
         # Look at more firms if household is unemployed
         num_searches = HouseholdConfig.beta if self.is_unemployed() else 1
         for _ in range(num_searches):
             potential_employer = self.select_new_employer()
             if self.is_acceptable_job_offer(potential_employer):
                 if self.employer is not None:
-                    self.employer.quit(self)
-                self.employer = potential_employer
+                    self.employer.quit_job(self)
                 potential_employer.hire(self)
                 return
 
@@ -233,7 +234,10 @@ class BaselineEconomyHousehold(Agent):
             # Determine what's available
             # and what the household can afford
             available_amount = vendor.inventory
-            affordable_amount = self.liquidity // vendor.goods_price
+            affordable_amount = (
+                self.liquidity // vendor.goods_price
+                if vendor.goods_price != 0 else math.inf
+            )
 
             # Blackmark any firm that fails to supply
             # what we want
@@ -242,7 +246,7 @@ class BaselineEconomyHousehold(Agent):
                     vendor not in self.blackmarked_firms):
                 # Store a tuple containting the failed supplier and how
                 # bad the shortage was
-                shortage = required_amount = available_amount
+                shortage = required_amount - available_amount
                 self.blackmarked_firms.append(
                     (vendor, shortage)
                 )
@@ -253,12 +257,23 @@ class BaselineEconomyHousehold(Agent):
                 affordable_amount,
                 available_amount
             )
-            self.model.transact(self, vendor, transaction_amount)
+            self.transact(
+                vendor,
+                transaction_amount,
+                transaction_amount * vendor.goods_price
+            )
             required_amount -= transaction_amount
 
             # Stop checking firms if we have enough stuff
             if self.is_satisfied(required_amount):
                 return
+
+    def transact(self, firm, quantity, total_price):
+        """
+        Buy the goods from the firm
+        """
+        firm.sell_goods(quantity, total_price)
+        self.liquidity -= total_price
 
 # MONTH END
 
@@ -325,12 +340,6 @@ class BaselineEconomyHousehold(Agent):
         blackmarks = next(choice_zip)
         return self.random.choices(firm_list, weights=blackmarks)[0]
 
-    def sacked(self):
-        """
-        Household receives their cards
-        """
-        self.employer = None
-
 # QUERIES
 
     def is_happy_at_work(self) -> bool:
@@ -344,7 +353,7 @@ class BaselineEconomyHousehold(Agent):
     def is_acceptable_job_offer(self, new_employer) -> bool:
         """
         Is there an acceptable job offer on the table?
-        The offer has to be more than the currentreservation wage to
+        The offer has to be more than the current or reservation wage to
         tempt people to move (including out of unemployment)
         """
         return (
@@ -360,9 +369,9 @@ class BaselineEconomyHousehold(Agent):
         """
         Have we bought enough stuff?
         """
-        return (self.planned_daily_consumption - amount >
-                self.planned_daily_consumption *
-                HouseholdConfig.satisfaction_fraction)
+        return ((self.planned_daily_consumption - amount) >
+                (self.planned_daily_consumption *
+                HouseholdConfig.satisfaction_fraction))
 
     def is_unemployed(self) -> bool:
         """
