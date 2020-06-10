@@ -286,7 +286,6 @@ class BaselineEconomyHousehold(Agent):
 
 # HELPERS
 
-
     def select_new_firm(self):
         """
         Select a new firm from the list of firms
@@ -325,6 +324,12 @@ class BaselineEconomyHousehold(Agent):
         firm_list = next(choice_zip)
         blackmarks = next(choice_zip)
         return self.random.choices(firm_list, weights=blackmarks)[0]
+
+    def sacked(self):
+        """
+        Household receives their cards
+        """
+        self.employer = None
 
 # QUERIES
 

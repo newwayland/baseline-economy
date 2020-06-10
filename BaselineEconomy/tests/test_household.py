@@ -57,3 +57,11 @@ def test_initial_plan_consumption():
     hh = initial_household()
     hh.plan_consumption()
     assert hh.planned_daily_consumption == math.inf
+
+
+def test_sacked():
+    hh = initial_household()
+    hh.employer = hh.select_new_firm()
+    assert not hh.is_unemployed()
+    hh.sacked()
+    assert hh.is_unemployed()

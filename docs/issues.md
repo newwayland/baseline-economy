@@ -20,6 +20,7 @@
 - Unemployed Households look for jobs at no more than 5 firms per month
 - Employees of a failing firm will take an immediate pay cut to keep their jobs
 - Wages are raised pre-emptively for all workers if hiring fails
+- An open position once requested stays open until filled - regardless of inventory changes in the meantime
 
 ## Issues
 - Equation `(12)` seems redundant. Any x raised to a power y where `0 < y < 1` will always be less than x
@@ -28,4 +29,5 @@
 - The wage choice of the unemployed is ambiguous. It talks about a currently received wage, but as the household is unemployed they are not receiving a wage at that point. Other context suggests this should be “reserved wage”.
 - Employed Households will jump jobs if they find a new job offering more than the minimum of their current wage rate or the reservation wage. The unemployed however will not take a job unless they get more than the reservation wage.
 - If a firm has a worker on notice from the previous month, but needs to hire this month does it cancel the firing, or go through with it and look for a new worker?
+- Similarly if there is an open position from previous months, but now inventories say the firm needs to fire, do they cancel out?
 

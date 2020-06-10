@@ -105,7 +105,7 @@ class BaselineEconomyFirm(Agent):
         self.workers = []
         self.has_open_position = False
         self.months_since_hire_failure = 0
-        self.previous_inventory = 0
+        self.current_demand = 0
 
     def step(self) -> None:
         """
@@ -121,9 +121,11 @@ class BaselineEconomyFirm(Agent):
         """
         Run the month start firm procedures
         """
-        set_wage_rate()
-        manage_workforce()
-        set_goods_price()
+        self.set_wage_rate()
+        self.manage_workforce()
+        self.set_goods_price()
+        # Reset demand counter
+        self.current_demand = 0
 
     def day(self) -> None:
         """
@@ -135,15 +137,71 @@ class BaselineEconomyFirm(Agent):
         """
         Run the month end firm procedures
         """
-        pass
+        if self.has_open_position:
+            self.months_since_hire_failure = 0
+        else:
+            self.months_since_hire_failure += 1
 
 # HELPERS
 
     def set_wage_rate(self) -> None:
+        """
+        Changes the wage rates up or down
+        """
         if self.should_raise_wage():
             self.wage_rate *= (1 + wage_adjustment(self.random))
         elif self.should_lower_wage():
             self.wage_rate *= (1 - wage_adjustment(self.random))
+
+    def manage_workforce(self) -> None:
+        """
+        Deal with hiring and firing decisions
+        """
+        if self.inventory < self.inventory_floor():
+            self.has_open_position = True
+        elif self.inventory > self.inventory_ceiling():
+            self.give_notice()
+
+        if self.worker_on_notice is not None:
+            if self.has_open_position:
+                self.worker_on_notice = None
+            else:
+                self.fire_worker()
+
+    def inventory_floor(self) -> float:
+        """
+        Calculate the lowest level of inventory the firm
+        requires
+        """
+        return FirmConfig.inventory_lphi * self.current_demand
+
+    def inventory_ceiling(self) -> float:
+        """
+        Calculate the highest level of inventory the firm
+        will accept
+        """
+        return FirmConfig.inventory_uphi * self.current_demand
+
+    def give_notice(self) -> None:
+        """
+        Pick a worker and give them notice
+        """
+        try:
+            self.worker_on_notice = self.random.choice(self.workers)
+        except IndexError:
+            # Empty list
+            pass
+
+    def fire_worker(self) -> None:
+        """
+        P45 time
+        """
+        self.workers.remove(self.worker_on_notice)
+        self.worker_on_notice.sacked()
+        self.worker_on_notice = None
+
+    def set_goods_price(self) -> None:
+        pass
 
 # QUERIES
 
