@@ -55,7 +55,7 @@ def test_model_step():
     assert not old_hh[0].is_month_start()
     assert old_firms[0].is_month_end()
     assert old_hh[0].is_month_end()
-    # Then back to beginning of month against
+    # Then back to beginning of month again
     model.step()
     assert model.firms.agents == old_firms
     assert model.households.agents == old_hh
