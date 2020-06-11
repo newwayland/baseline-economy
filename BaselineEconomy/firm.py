@@ -124,7 +124,7 @@ class BaselineEconomyFirm(Agent):
         self.set_wage_rate()
         self.manage_workforce()
         # Is the firm confident enough to change its price?
-        if self.random.random() <= FirmConfig.theta:
+        if self.with_probability(FirmConfig.theta):
             self.set_goods_price()
         # Reset demand counter
         self.current_demand = 0
@@ -266,3 +266,9 @@ class BaselineEconomyFirm(Agent):
         and can drop its wage rate
         """
         return self.months_since_hire_failure >= FirmConfig.gamma
+
+    def with_probability(self, chance: float) -> bool:
+        """
+        Random check between 0 and 1
+        """
+        return self.random.random() < chance

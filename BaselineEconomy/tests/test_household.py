@@ -4,8 +4,6 @@ import math
 import pytest
 
 
-
-
 def initial_household():
     return BaselineEconomyModel(1, 10).households.agents[0]
 
@@ -22,7 +20,7 @@ def test_initial_household():
     assert len(hh.blackmarked_firms) == 0
     assert hh.is_month_start()
     assert not hh.is_month_end()
-    assert not hh.is_happy_at_work()
+    assert hh.is_unhappy_at_work()
 
 
 def test_unemployed_adjust_wage():

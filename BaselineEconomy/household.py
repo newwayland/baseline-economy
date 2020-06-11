@@ -119,11 +119,17 @@ class BaselineEconomyHousehold(Agent):
         """
         Run the month start household procedures
         """
-        self.find_cheaper_vendor()
-        self.find_capable_vendor()
+        # Look for cheaper vendors if household feels like it
+        if self.with_probability(HouseholdConfig.phi_price):
+            self.find_cheaper_vendor()
+        # Dump a failed vendor if household feels like it
+        if self.with_probability(HouseholdConfig.phi_quant):
+            self.find_capable_vendor()
         # Clear the blackmark list
         self.blackmarked_firms = []
-        self.find_work()
+        # Look for a job if household wants to
+        if self.is_unhappy_at_work():
+            self.look_for_work()
         self.plan_consumption()
 
     def day(self) -> None:
@@ -144,9 +150,6 @@ class BaselineEconomyHousehold(Agent):
         """
         Look for a firm offereing cheaper goods
         """
-        # Check if the household feels like looking
-        if self.random.random() >= HouseholdConfig.phi_price:
-            return
         # Pick an existing supplier to market test and calculate the
         # price the new supplier needs to beat
         supplier_index = range(0, len(self.preferred_suppliers) - 1)
@@ -164,11 +167,9 @@ class BaselineEconomyHousehold(Agent):
         """
         If the household has been let down look for new suppliers
         """
-        # Check if the household has held a grudge
-        if (not self.blackmarked_firms or
-                self.random.random() >= HouseholdConfig.phi_quant):
+        # Nothing to do if all firms have delivered
+        if not self.blackmarked_firms:
             return
-
         target_firm = self.select_blackmarked_firm()
         # The firm may already have been replaced by price competition
         # In which case 'index' will throw an error we need to catch
@@ -177,14 +178,6 @@ class BaselineEconomyHousehold(Agent):
             self.preferred_suppliers[target_index] = self.select_new_firm()
         except ValueError:
             pass
-
-    def find_work(self) -> None:
-        '''
-        Decide if the household is going to look for work
-        '''
-        # Is the household in the jobhunting mood?
-        if not self.is_happy_at_work():
-            self.look_for_work()
 
     def look_for_work(self) -> None:
         """
@@ -210,13 +203,13 @@ class BaselineEconomyHousehold(Agent):
         average_price = sum(
             [o.goods_price for o in self.preferred_suppliers]
         ) / len(self.preferred_suppliers)
-        if average_price == 0:
-            self.planned_daily_consumption = math.inf
-        else:
+        try:
             self.planned_daily_consumption = planned_consumption_amount(
                 self.liquidity,
                 average_price
             ) // self.model.month_length
+        except ZeroDivisionError:
+            self.planned_daily_consumption = math.inf
 
 # DAILY
 
@@ -230,32 +223,9 @@ class BaselineEconomyHousehold(Agent):
         # the preferred suppliers
         required_amount = self.planned_daily_consumption
         for vendor in self.preferred_suppliers:
-
-            # Determine what's available
-            # and what the household can afford
-            available_amount = vendor.inventory
-            affordable_amount = (
-                self.liquidity // vendor.goods_price
-                if vendor.goods_price != 0 else math.inf
-            )
-
-            # Blackmark any firm that fails to supply
-            # what we want
-            if (available_amount < required_amount and
-                available_amount < affordable_amount and
-                    vendor not in self.blackmarked_firms):
-                # Store a tuple containting the failed supplier and how
-                # bad the shortage was
-                shortage = required_amount - available_amount
-                self.blackmarked_firms.append(
-                    (vendor, shortage)
-                )
-
-            # Buy what we can
-            transaction_amount = min(
-                required_amount,
-                affordable_amount,
-                available_amount
+            transaction_amount = self.check_vendor_stock(
+                vendor,
+                required_amount
             )
             self.transact(
                 vendor,
@@ -263,12 +233,49 @@ class BaselineEconomyHousehold(Agent):
                 transaction_amount * vendor.goods_price
             )
             required_amount -= transaction_amount
-
-            # Stop checking firms if we have enough stuff
+            # Stop checking firms if the household
+            # has bought enough stuff
             if self.is_satisfied(required_amount):
                 return
 
-    def transact(self, firm, quantity, total_price):
+    def check_vendor_stock(self, firm, required_amount: int) -> int:
+        """
+        Check the stock at a vendor and return how much the
+        household can buy from them.
+        Add them to the blackmark list if they can't supply
+        what the household can demand
+        """
+        available_amount = firm.inventory
+        affordable_amount = self.get_affordable_amount(firm)
+        if (available_amount < required_amount and
+                available_amount < affordable_amount):
+            self.blackmark(firm, required_amount)
+        return min(
+            required_amount,
+            affordable_amount,
+            available_amount
+        )
+
+    def get_affordable_amount(self, firm) -> int:
+        """
+        Calculate how much the household can afford to buy
+        """
+        try:
+            return self.liquidity // firm.goods_price
+        except ZeroDivisionError:
+            return math.inf
+
+    def blackmark(self, firm, required_amount: int) -> None:
+        """
+        Add a firm to the blackmark list along with
+        how short they were.
+        A firm can end up with multiple records on this list
+        """
+        self.blackmarked_firms.append(
+            (firm, required_amount - firm.inventory)
+        )
+
+    def transact(self, firm, quantity: int, total_price: int) -> None:
         """
         Buy the goods from the firm
         """
@@ -342,13 +349,21 @@ class BaselineEconomyHousehold(Agent):
 
 # QUERIES
 
-    def is_happy_at_work(self) -> bool:
+    def is_unhappy_at_work(self) -> bool:
         """
-        Is the household a happy little worker bee?
+        Does the household want to change jobs?
         """
-        return (not self.is_unemployed() and
-                self.employer.wage_rate >= self.reservation_wage and
-                self.random.random() >= HouseholdConfig.pi)
+        return (
+            self.is_unemployed() or
+            self.is_paid_too_little() or
+            self.with_probability(HouseholdConfig.pi)
+        )
+
+    def is_paid_too_little(self) -> bool:
+        """
+        Is the household unhappy with their wage?
+        """
+        return self.employer.wage_rate < self.reservation_wage
 
     def is_acceptable_job_offer(self, new_employer) -> bool:
         """
@@ -390,3 +405,9 @@ class BaselineEconomyHousehold(Agent):
         Are we at the end of a month?
         """
         return (self.model.households.steps + 1) % self.model.month_length == 0
+
+    def with_probability(self, chance: float) -> bool:
+        """
+        Random check between 0 and 1
+        """
+        return self.random.random() < chance
