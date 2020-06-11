@@ -25,8 +25,9 @@ def test_initial_firm():
     assert firm.liquidity == FirmConfig.initial_liquidity
     assert firm.worker_on_notice is None
     assert len(firm.workers) == 0
-    assert firm.is_month_start()
-    assert not firm.is_month_end()
+    # New unstepped firm starts at end of previous month
+    assert not firm.is_month_start()
+    assert firm.is_month_end()
     assert not firm.has_open_position
     assert not firm.should_lower_wage()
     assert not firm.should_raise_wage()

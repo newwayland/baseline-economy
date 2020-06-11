@@ -49,11 +49,14 @@ class ScheduleByType(BaseScheduler):
         """
         Executes the step of each agent grouped by type in order
 
+        Increment the day to start with so that the step number from
+        within the agents starts at '1', not '0'
+
         """
-        for agent_class in self._agents.values():
-            agent_class.step()
         self.steps += 1
         self.time += 1
+        for agent_class in self._agents.values():
+            agent_class.step()
 
     def get_agent_count(self) -> int:
         """ Returns the total number of agents """

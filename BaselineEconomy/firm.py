@@ -110,15 +110,17 @@ class BaselineEconomyFirm(Agent):
         self.has_open_position = False
         self.months_since_hire_failure = 0
         self.current_demand = 0
+        self.is_month_start = self.model.is_month_start
+        self.is_month_end = self.model.is_month_end
 
     def step(self) -> None:
         """
         Run the firm step processes
         """
-        if self.model.is_month_start():
+        if self.is_month_start():
             self.month_start()
         self.day()
-        if self.model.is_month_end():
+        if self.is_month_end():
             self.month_end()
 
     def month_start(self) -> None:
@@ -137,7 +139,7 @@ class BaselineEconomyFirm(Agent):
         """
         Run the daily firm procedures
         """
-        self.product_output()
+        self.produce_output()
 
     def month_end(self) -> None:
         """
@@ -319,18 +321,6 @@ class BaselineEconomyFirm(Agent):
         return total_paid
 
 # QUERIES
-
-    def is_month_start(self) -> bool:
-        """
-        Are we at the start of a month?
-        """
-        return self.model.firms.steps % self.model.month_length == 0
-
-    def is_month_end(self) -> bool:
-        """
-        Are we at the end of a month?
-        """
-        return (self.model.firms.steps + 1) % self.model.month_length == 0
 
     def should_raise_wage(self) -> bool:
         """

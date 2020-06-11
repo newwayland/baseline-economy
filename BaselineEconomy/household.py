@@ -104,6 +104,8 @@ class BaselineEconomyHousehold(Agent):
         )
         self.employer = None
         self.blackmarked_firms = []
+        self.is_month_start = self.model.is_month_start
+        self.is_month_end = self.model.is_month_end
 
     def step(self) -> None:
         """
@@ -120,10 +122,10 @@ class BaselineEconomyHousehold(Agent):
         Run the month start household procedures
         """
         # Look for cheaper vendors if household feels like it
-        if self.with_probability(HouseholdConfig.phi_price):
+        if self.with_probability(HouseholdConfig.psi_price):
             self.find_cheaper_vendor()
         # Dump a failed vendor if household feels like it
-        if self.with_probability(HouseholdConfig.phi_quant):
+        if self.with_probability(HouseholdConfig.psi_quant):
             self.find_capable_vendor()
         # Clear the blackmark list
         self.blackmarked_firms = []
@@ -393,18 +395,6 @@ class BaselineEconomyHousehold(Agent):
         We're unemployed if we haven't got an Employer
         """
         return self.employer is None
-
-    def is_month_start(self) -> bool:
-        """
-        Are we at the start of a month?
-        """
-        return self.model.households.steps % self.model.month_length == 0
-
-    def is_month_end(self) -> bool:
-        """
-        Are we at the end of a month?
-        """
-        return (self.model.households.steps + 1) % self.model.month_length == 0
 
     def with_probability(self, chance: float) -> bool:
         """

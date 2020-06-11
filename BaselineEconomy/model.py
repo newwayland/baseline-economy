@@ -65,6 +65,20 @@ class BaselineEconomyModel(Model):
     def num_households(self) -> int:
         return self.households.get_agent_count()
 
+    def is_month_start(self) -> bool:
+        """
+        Are we at the start of a month?
+        Day 1, 22, 43, etc.
+        """
+        return self.schedule.steps % self.month_length == 1
+
+    def is_month_end(self) -> bool:
+        """
+        Are we at the end of a month?
+        Day 0, 21, 42, etc.
+        """
+        return self.schedule.steps % self.month_length == 0
+
     def step(self):
         """
         A model step. Used for collecting data and advancing the schedule
