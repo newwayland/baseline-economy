@@ -238,6 +238,32 @@ class BaselineEconomyHousehold(Agent):
             if self.is_satisfied(required_amount):
                 return
 
+# MONTH END
+
+    def adjust_reservation_wage(self) -> None:
+        """
+        Make a note of the reservation wage
+        which affects how intensely a household will look for a job
+        """
+        if self.is_unemployed():
+            self.reservation_wage *= HouseholdConfig.wage_decay_rate
+        else:
+            self.reservation_wage = max(
+                self.reservation_wage,
+                self.employer.wage_rate
+            )
+
+# FIRM QUERIES
+
+    @property
+    def labour_amount(self):
+        """
+        Amount of labour power available from a household
+        """
+        return labour_supply()
+
+# HELPERS
+
     def check_vendor_stock(self, firm, required_amount: int) -> int:
         """
         Check the stock at a vendor and return how much the
@@ -281,32 +307,6 @@ class BaselineEconomyHousehold(Agent):
         """
         firm.sell_goods(quantity, total_price)
         self.liquidity -= total_price
-
-# MONTH END
-
-    def adjust_reservation_wage(self) -> None:
-        """
-        Make a note of the reservation wage
-        which affects how intensely a household will look for a job
-        """
-        if self.is_unemployed():
-            self.reservation_wage *= HouseholdConfig.wage_decay_rate
-        else:
-            self.reservation_wage = max(
-                self.reservation_wage,
-                self.employer.wage_rate
-            )
-
-# FIRM QUERIES
-
-    @property
-    def labour_amount():
-        """
-        Amount of labour power available from a household
-        """
-        return labour_supply()
-
-# HELPERS
 
     def select_new_firm(self):
         """

@@ -1,5 +1,6 @@
 from mesa import Agent
 from random import Random
+import math
 
 
 # CONFIG
@@ -136,18 +137,17 @@ class BaselineEconomyFirm(Agent):
         """
         Run the daily firm procedures
         """
-        pass
+        self.product_output()
 
     def month_end(self) -> None:
         """
         Run the month end firm procedures
         """
-        if self.has_open_position:
-            self.months_since_hire_failure = 0
-        else:
-            self.months_since_hire_failure += 1
+        self.pay_wages()
+        self.distribute_profits()
+        self.check_for_hire_failure()
 
-# HELPERS
+# MONTH START
 
     def set_wage_rate(self) -> None:
         """
@@ -177,6 +177,66 @@ class BaselineEconomyFirm(Agent):
         if self.inventory > self.inventory_ceiling():
             self.has_open_position = False
             self.give_notice()
+
+    def set_goods_price(self) -> None:
+        """
+        Adjust the price up if inventories are too low
+        and down if inventories are too high
+        """
+        if self.inventory < self.inventory_floor():
+            self.goods_price *= (1 + price_adjustment(self.random))
+        elif self.inventory > self.inventory_ceiling():
+            self.goods_price *= (1 - price_adjustment(self.random))
+
+# DAILY
+
+    def produce_output(self) -> None:
+        """
+        Work out how much effort the firm can command and
+        run it through the production process.
+        Accumulate output in the firms inventory
+        """
+        labour_power = sum([o.labour_amount for o in self.workers])
+        self.inventory += production_amount(labour_power)
+
+# MONTH END
+
+    def pay_wages(self) -> None:
+        """
+        Pay wages at the wage rate.
+        If that is unaffordable, cut the wage rate to make
+        it affordable
+        """
+        num_workers = len(self.workers)
+        if self.liquidity < num_workers * self.wage_rate:
+            self.wage_rate = self.liquidity // num_workers
+        for hh in self.workers:
+            hh.liquidity += self.wage_rate
+        self.liquidity -= num_workers * self.wage_rate
+
+    def distribute_profits(self) -> None:
+        """
+        Distribute profits less a labour cost buffer
+        to households
+        """
+        liquidity_buffer = self.calculate_required_buffer()
+        if self.liquidity <= liquidity_buffer:
+            return
+        self.liquidity -= self.distribute_to_households(
+            self.liquidity - liquidity_buffer
+        )
+
+    def check_for_hire_failure(self) -> None:
+        """
+        Accumulate the number of months since the firm failed to hire
+        which feeds into the wage calculation
+        """
+        if self.has_open_position:
+            self.months_since_hire_failure = 0
+        else:
+            self.months_since_hire_failure += 1
+
+# HELPERS
 
     def inventory_floor(self) -> float:
         """
@@ -224,17 +284,7 @@ class BaselineEconomyFirm(Agent):
         worker.employer = self
         self.has_open_position = False
 
-    def set_goods_price(self) -> None:
-        """
-        Adjust the price up if inventories are too low
-        and down if inventories are too high
-        """
-        if self.inventory < self.inventory_floor():
-            self.goods_price *= (1 + price_adjustment(self.random))
-        elif self.inventory > self.inventory_ceiling():
-            self.goods_price *= (1 - price_adjustment(self.random))
-
-    def sell_goods(self, quantity, total_price):
+    def sell_goods(self, quantity, total_price) -> None:
         """
         Update inventory and demand
         then bank the cash
@@ -242,6 +292,31 @@ class BaselineEconomyFirm(Agent):
         self.inventory -= quantity
         self.current_demand += quantity
         self.liquidity += total_price
+
+    def calculate_required_buffer(self) -> int:
+        """
+        The liquidity buffer is relative to labour costs
+        Round up to ensure buffer is big enough
+        """
+        return math.ceil(FirmConfig.chi * self.wage_rate * len(self.workers))
+
+    def distribute_to_households(self, profits: int) -> int:
+        """
+        Distribute profits to households weighted by their current liquidity
+        and rounded down to the nearest integer value
+        Return the total amount distributed
+        """
+        total_shares = sum([o.liquidity for o in self.model.households.agents])
+        try:
+            dividend_per_share = profits / total_shares
+        except ZeroDivisionError:
+            dividend_per_share = 0
+        total_paid = 0
+        for hh in self.model.households.agents:
+            dividend = math.floor(hh.liquidity * dividend_per_share)
+            hh.liquidity += dividend
+            total_paid += dividend
+        return total_paid
 
 # QUERIES
 

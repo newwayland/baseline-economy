@@ -18,7 +18,7 @@
 - Unemployed reserved wage reduction is fixed at 10% per month
 - Households in work will only look for jobs at no more than 1 other firm per month
 - Unemployed Households look for jobs at no more than 5 firms per month
-- Employees of a failing firm will take an immediate pay cut to keep their jobs
+- Employees of a failing firm will take an immediate pay cut to keep their jobs. The wage rate is reduced to what the firm can afford
 - Wages are raised pre-emptively for all workers if hiring fails
 - Open positions persist month to month until filled
 

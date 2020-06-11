@@ -1,5 +1,8 @@
 from BaselineEconomy.model import BaselineEconomyModel
-from BaselineEconomy.firm import FirmConfig
+from BaselineEconomy.firm import (
+    FirmConfig,
+    production_amount
+)
 
 
 def initial_firm():
@@ -136,3 +139,84 @@ def test_price_decrease():
     firm.inventory = 100
     firm.set_goods_price()
     assert (1 - FirmConfig.upsilon <= firm.goods_price < 1)
+
+
+def test_production_process():
+    firm = initial_firm()
+    for hh in firm.model.households.agents:
+        firm.hire(hh)
+    assert firm.inventory == 0
+    firm.produce_output()
+    expected_output = production_amount(
+        sum([o.labour_amount for o in firm.model.households.agents])
+    )
+    assert firm.inventory == expected_output
+    firm.produce_output()
+    assert firm.inventory == 2 * expected_output
+
+
+def test_pay_wages():
+    firm = initial_firm()
+    firm.wage_rate = 2
+    for hh in firm.model.households.agents:
+        firm.hire(hh)
+    num_workers = len(firm.workers)
+    firm.liquidity = 3 * num_workers
+    # Pay full wage
+    firm.pay_wages()
+    assert firm.liquidity == num_workers
+    assert all([o.liquidity == 2 for o in firm.workers])
+    assert firm.wage_rate == 2
+    # Pay half wages
+    firm.pay_wages()
+    assert firm.liquidity == 0
+    assert all([o.liquidity == 3 for o in firm.workers])
+    assert firm.wage_rate == 1
+
+
+def test_hire_failure():
+    firm = initial_firm()
+    firm.check_for_hire_failure()
+    assert firm.months_since_hire_failure == 1
+    firm.check_for_hire_failure()
+    assert firm.months_since_hire_failure == 2
+    firm.has_open_position = True
+    firm.check_for_hire_failure()
+    assert firm.months_since_hire_failure == 0
+
+
+def test_calculate_buffer():
+    firm = initial_firm()
+    firm.wage_rate = 40
+    for hh in firm.model.households.agents:
+        firm.hire(hh)
+    num_workers = len(firm.workers)
+    assert (firm.calculate_required_buffer() ==
+            num_workers * firm.wage_rate * FirmConfig.chi)
+    firm.wage_rate = 4
+    # Should round up
+    assert firm.calculate_required_buffer() == 2
+    # No profits at all
+    firm.distribute_profits()
+    assert all([o.liquidity == 0 for o in firm.model.households.agents])
+    # Still no profits
+    firm.liquidity = 2
+    firm.distribute_profits()
+    assert all([o.liquidity == 0 for o in firm.model.households.agents])
+    assert firm.liquidity == 2
+    # Insufficient profits to distribute
+    firm.liquidity += num_workers - 1
+    firm.distribute_profits()
+    assert all([o.liquidity == 0 for o in firm.model.households.agents])
+    assert firm.liquidity == 2 + num_workers - 1
+
+
+def test_distribute_profits():
+    firm = initial_firm()
+    firm.liquidity = 80
+    for hh in firm.model.households.agents:
+        hh.liquidity = 1
+    firm.model.households.agents[-1].liquidity = 2
+    firm.distribute_profits()
+    assert all([o.liquidity >= 21 for o in firm.model.households.agents])
+    assert firm.model.households.agents[-1].liquidity == 42
