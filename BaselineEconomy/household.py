@@ -323,7 +323,7 @@ class BaselineEconomyHousehold(Agent):
     def select_new_employer(self):
         """
         Select a new potential employer filter out current
-        employ
+        employer
         """
         firms = self.model.firms.agents
         result = self.random.choice(firms)

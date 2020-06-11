@@ -10,6 +10,12 @@ def households(firm):
     return firm.model.households.agents
 
 
+def test_probability_check():
+    firm = initial_firm()
+    assert firm.with_probability(1)
+    assert not firm.with_probability(-0.1)
+
+
 def test_initial_firm():
     firm = initial_firm()
     assert firm.wage_rate == FirmConfig.initial_wage_rate

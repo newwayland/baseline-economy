@@ -90,6 +90,9 @@ class BaselineEconomyFirm(Agent):
     Variables:
 
     liquidity: amount of monetary units firm posseses
+    goods_price: the price of each item in the inventory
+    inventory: amount of goods on hand
+    wage_rate: the price the firm will pay for labour power
     """
 
     def __init__(self, unique_id, model) -> None:
@@ -170,6 +173,7 @@ class BaselineEconomyFirm(Agent):
             self.fire_worker()
 
         # Give notice to a worker if inventories are too high
+        # Cancel any open position
         if self.inventory > self.inventory_ceiling():
             self.has_open_position = False
             self.give_notice()

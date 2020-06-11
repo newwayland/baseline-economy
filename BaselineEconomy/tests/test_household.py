@@ -8,6 +8,12 @@ def initial_household():
     return BaselineEconomyModel(1, 10).households.agents[0]
 
 
+def test_probability_check():
+    hh = initial_household()
+    assert hh.with_probability(1)
+    assert not hh.with_probability(-0.1)
+
+
 def test_initial_household():
     hh = initial_household()
     assert len(
@@ -96,6 +102,19 @@ def test_find_work():
         assert not f.workers
 
 
+def test_work_status():
+    hh = initial_household()
+    assert hh.is_unemployed()
+    assert hh.is_unhappy_at_work()
+    hh.employer = hh.select_new_employer()
+    assert not hh.is_unemployed()
+    assert not hh.is_paid_too_little()
+    hh.reservation_wage = 100
+    assert not hh.is_unemployed()
+    assert hh.is_paid_too_little()
+    assert hh.is_unhappy_at_work()
+
+
 @pytest.mark.parametrize(
     "inv,price,cash,cons,finv,fliq,hliq",
     [
@@ -116,3 +135,40 @@ def test_buy_goods(inv, price, cash, cons, finv, fliq, hliq):
     assert firm.liquidity == fliq
     assert firm.current_demand == min(inv, cons, cash // price)
     assert hh.liquidity == hliq
+
+
+def test_find_cheaper_vendor():
+    hh = initial_household()
+    for f in hh.preferred_suppliers:
+        f.goods_price = 100
+    hh.find_cheaper_vendor()
+    assert any([o.goods_price != 100 for o in hh.preferred_suppliers])
+
+
+def test_find_capable_vendor():
+    hh = initial_household()
+    assert not hh.blackmarked_firms
+    org = hh.preferred_suppliers.copy()
+    # Nobody blackmarked
+    hh.find_capable_vendor()
+    assert hh.preferred_suppliers == org
+    assert not hh.blackmarked_firms
+    hh.blackmark(hh.preferred_suppliers[0], 0)
+    hh.blackmark(hh.preferred_suppliers[1], 1)
+    assert len(hh.blackmarked_firms) == 2
+    # Check weighted replace works
+    hh.find_capable_vendor()
+    assert hh.preferred_suppliers[0] == org[0]
+    assert hh.preferred_suppliers[1] != org[1]
+    assert len(hh.blackmarked_firms) == 2
+
+
+def test_replaced_firm_is_skipped():
+    hh = initial_household()
+    hh.blackmark(hh.preferred_suppliers[1], 1)
+    hh.preferred_suppliers[1] = hh.select_new_firm()
+    org = hh.preferred_suppliers.copy()
+    assert len(hh.blackmarked_firms) == 1
+    hh.find_capable_vendor()
+    assert hh.preferred_suppliers == org
+    assert len(hh.blackmarked_firms) == 1

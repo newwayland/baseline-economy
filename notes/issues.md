@@ -40,3 +40,6 @@
 - If a worker is on notice and inventories are now too low, is the worker notice cancelled?
 - In an open position exists and inventories are now too high, is a worker still given notice?
 - Does an open position persist beyond the end of the month?
+- The numeric types of the variables are not specified. Both monetary
+  values and goods are usually whole units to avoid floating point
+  rounding issues, but the value of Zeta in the household calibration suggests some sort of decimal type
