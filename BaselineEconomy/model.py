@@ -51,19 +51,38 @@ class BaselineEconomyModel(Model):
         )
 
     @property
+    def labour_supply(self) -> int:
+        """
+        Amount of labour power supplied by a household per day
+        """
+        return 1
+
+    @property
     def firms(self) -> BaseScheduler:
+        """
+        The scheduler managing the firm agents
+        """
         return self.schedule.by_type(BaselineEconomyFirm)
 
     @property
     def households(self) -> BaseScheduler:
+        """
+        The scheduler managing the household agents
+        """
         return self.schedule.by_type(BaselineEconomyHousehold)
 
     @property
     def num_firms(self) -> int:
+        """
+        The number of firms in the model
+        """
         return self.firms.get_agent_count()
 
     @property
     def num_households(self) -> int:
+        """
+        The number of households in the model
+        """
         return self.households.get_agent_count()
 
     def is_month_start(self) -> bool:
@@ -87,6 +106,8 @@ class BaselineEconomyModel(Model):
         self.schedule.step()
         self.household_datacollector.collect(self)
 
+
+# FUNCTIONS
 
 def count_employed(model):
     return len(

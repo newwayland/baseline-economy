@@ -126,18 +126,16 @@ def test_wage_decrease():
 
 def test_price_increase():
     firm = initial_firm()
-    firm.current_demand = 1
+    firm.wage_rate = 100
     firm.goods_price = 1
-    firm.inventory = 0
     firm.set_goods_price()
     assert (1 < firm.goods_price <= 1 + FirmConfig.upsilon)
 
 
 def test_price_decrease():
     firm = initial_firm()
-    firm.current_demand = 1
     firm.goods_price = 1
-    firm.inventory = 100
+    firm.wage_rate = 1
     firm.set_goods_price()
     assert (1 - FirmConfig.upsilon <= firm.goods_price < 1)
 
@@ -160,6 +158,7 @@ def test_pay_wages():
     firm = initial_firm()
     firm.wage_rate = 2
     for hh in firm.model.households.agents:
+        hh.liquidity = 0
         firm.hire(hh)
     num_workers = len(firm.workers)
     firm.liquidity = 3 * num_workers
@@ -190,6 +189,7 @@ def test_calculate_buffer():
     firm = initial_firm()
     firm.wage_rate = 40
     for hh in firm.model.households.agents:
+        hh.liquidity = 0
         firm.hire(hh)
     num_workers = len(firm.workers)
     assert (firm.calculate_required_buffer() ==
@@ -221,3 +221,12 @@ def test_distribute_profits():
     firm.distribute_profits()
     assert all([o.liquidity >= 21 for o in firm.model.households.agents])
     assert firm.model.households.agents[-1].liquidity == 42
+
+
+def test_marginal_cost():
+    firm = initial_firm()
+    firm.wage_rate = 63
+    assert (
+        firm.marginal_cost() ==
+        firm.wage_rate / FirmConfig.lambda_val / firm.model.month_length
+    )

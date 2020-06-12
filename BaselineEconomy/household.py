@@ -27,7 +27,8 @@ class HouseholdConfig:
 
     # Calibration values (Table 1)
     #
-    # Amount new firm has to be cheaper to replace old firm
+    # Fraction a new firms price has to be less than the
+    # old firm before the new firm will be picked
     zeta = 0.01
 
     # Number of firms to search for work if unemployed
@@ -52,13 +53,6 @@ class HouseholdConfig:
 
 
 # FUNCTIONS
-
-def labour_supply() -> int:
-    """
-    Amount of labour power supplied by a household per day
-    """
-    return 1
-
 
 def planned_consumption_amount(
     current_liquidity: int,
@@ -260,9 +254,10 @@ class BaselineEconomyHousehold(Agent):
     @property
     def labour_amount(self):
         """
-        Amount of labour power available from a household
+        Amount of labour power available from this household
+        Just a delegation to the general expected labour supply value
         """
-        return labour_supply()
+        return self.model.labour_supply
 
 # HELPERS
 

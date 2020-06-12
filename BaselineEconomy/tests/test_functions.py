@@ -1,6 +1,5 @@
 from BaselineEconomy.household import (
     planned_consumption_amount,
-    labour_supply,
     HouseholdConfig
 )
 from BaselineEconomy.firm import (
@@ -27,13 +26,13 @@ def test_consumption_values(liquidity, ave_price, month_amt):
     )
 
 
-def test_labour_supply():
-    assert labour_supply() == 1
-
-
-def test_production_amount():
-    assert production_amount(labour_supply()) == (
-        labour_supply() * FirmConfig.lambda_val
+@pytest.mark.parametrize(
+    "labour_power",
+    [1, 5, 10]
+)
+def test_production_amount(labour_power):
+    assert production_amount(labour_power) == (
+        labour_power * FirmConfig.lambda_val
     )
 
 

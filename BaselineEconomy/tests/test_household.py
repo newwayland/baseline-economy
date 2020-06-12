@@ -130,6 +130,7 @@ def test_buy_goods(inv, price, cash, cons, finv, fliq, hliq):
     firm.inventory = inv
     firm.goods_price = price
     hh.liquidity = cash
+    firm.liquidity = 0
     hh.planned_daily_consumption = cons
     hh.buy_goods()
     assert firm.inventory == finv

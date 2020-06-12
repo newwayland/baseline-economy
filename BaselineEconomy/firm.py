@@ -110,8 +110,14 @@ class BaselineEconomyFirm(Agent):
         self.has_open_position = False
         self.months_since_hire_failure = 0
         self.current_demand = 0
+        # Constants
         self.is_month_start = self.model.is_month_start
         self.is_month_end = self.model.is_month_end
+        self.marginal_cost_deflator = (
+            FirmConfig.lambda_val *
+            self.model.labour_supply *
+            self.model.month_length
+        )
 
     def step(self) -> None:
         """
@@ -185,9 +191,9 @@ class BaselineEconomyFirm(Agent):
         Adjust the price up if inventories are too low
         and down if inventories are too high
         """
-        if self.inventory < self.inventory_floor():
+        if self.goods_price < self.goods_price_floor():
             self.goods_price *= (1 + price_adjustment(self.random))
-        elif self.inventory > self.inventory_ceiling():
+        elif self.goods_price > self.goods_price_ceiling():
             self.goods_price *= (1 - price_adjustment(self.random))
 
 # DAILY
@@ -239,6 +245,28 @@ class BaselineEconomyFirm(Agent):
             self.months_since_hire_failure += 1
 
 # HELPERS
+
+    def marginal_cost(self) -> float:
+        """
+        Calcluate the cost of producing one extra unit of
+        output
+        This should be linked to the labour supply somehow
+        """
+        return self.wage_rate / self.marginal_cost_deflator
+
+    def goods_price_floor(self) -> float:
+        """
+        Calculate the lowest level of price relative to
+        marginal costs the firm will accept
+        """
+        return FirmConfig.goods_price_lphi * self.marginal_cost()
+
+    def goods_price_ceiling(self) -> float:
+        """
+        Calculate the highest level of price relative to
+        marginal costs the firm will accept
+        """
+        return FirmConfig.goods_price_uphi * self.marginal_cost()
 
     def inventory_floor(self) -> float:
         """
