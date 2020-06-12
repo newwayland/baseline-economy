@@ -18,9 +18,9 @@ class BaselineEconomyModel(Model):
     """
 
     def __init__(
-            self,
-            num_households=1000,
-            num_firms=100,
+        self,
+        num_households=1000,
+        num_firms=100,
     ):
         super().__init__()
         self.schedule = ScheduleByType(
@@ -32,7 +32,7 @@ class BaselineEconomyModel(Model):
 
         for i in range(num_firms):
             agent = BaselineEconomyFirm(
-                i,
+                i + 1000,
                 self,
             )
             self.schedule.add(agent)
@@ -44,10 +44,11 @@ class BaselineEconomyModel(Model):
             )
             self.schedule.add(agent)
 
-        # example data collector
-        self.datacollector = DataCollector()
-
-        self.datacollector.collect(self)
+        self.household_datacollector = DataCollector(
+            model_reporters={
+                "Employed": count_employed
+            }
+        )
 
     @property
     def firms(self) -> BaseScheduler:
@@ -84,4 +85,10 @@ class BaselineEconomyModel(Model):
         A model step. Used for collecting data and advancing the schedule
         """
         self.schedule.step()
-        self.datacollector.collect(self)
+        self.household_datacollector.collect(self)
+
+
+def count_employed(model):
+    return len(
+        [hh for hh in model.households.agents if hh.employer is not None]
+    )
