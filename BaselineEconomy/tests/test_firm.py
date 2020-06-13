@@ -6,11 +6,11 @@ from BaselineEconomy.firm import (
 
 
 def initial_firm():
-    return BaselineEconomyModel(3, 10).firms.agents[0]
+    return BaselineEconomyModel(3, 10).firms[0]
 
 
 def households(firm):
-    return firm.model.households.agents
+    return firm.model.households
 
 
 def test_probability_check():
@@ -25,15 +25,14 @@ def test_initial_firm():
     assert firm.liquidity == FirmConfig.initial_liquidity
     assert firm.worker_on_notice is None
     assert len(firm.workers) == 0
-    # New unstepped firm starts at end of previous month
-    assert not firm.is_month_start()
-    assert firm.is_month_end()
+    assert firm.is_month_start()
+    assert not firm.is_month_end()
     assert not firm.has_open_position
     assert not firm.should_lower_wage()
     assert not firm.should_raise_wage()
     assert firm.inventory == 0
-    assert firm.inventory_ceiling() == 0
-    assert firm.inventory_floor() == 0
+    assert firm.inventory_ceiling() > firm.inventory
+    assert firm.inventory_floor() > firm.inventory
 
 
 def test_manage_workforce_hire():
@@ -104,50 +103,98 @@ def test_manage_workforce_fire():
     assert firm.worker_on_notice is None
     assert not firm.has_open_position
     assert len(firm.workers) == len(hh) - 1
+    # Should give worker notice again due to inventory build up
+    firm.inventory = 100
+    firm.manage_workforce()
+    assert firm.worker_on_notice is not None
+    assert not firm.has_open_position
+    assert len(firm.workers) == len(hh) - 1
+    # Worker quits while on notice
+    firm.quit_job(firm.worker_on_notice)
+    assert firm.worker_on_notice is None
+    assert len(firm.workers) == len(hh) - 2
+    firm.manage_workforce()
+    assert firm.worker_on_notice is not None
+    assert len(firm.workers) == len(hh) - 2
+
+
+price_multiple = 1000
 
 
 def test_wage_increase():
     firm = initial_firm()
-    firm.wage_rate = 1
+    firm.wage_rate = price_multiple
     firm.has_open_position = True
     assert firm.should_raise_wage()
     firm.set_wage_rate()
-    assert (1 < firm.wage_rate <= 1 + FirmConfig.delta)
+    assert (price_multiple
+            < firm.wage_rate
+            <= price_multiple*(1 + FirmConfig.delta))
 
 
 def test_wage_decrease():
     firm = initial_firm()
-    firm.wage_rate = 1
+    firm.wage_rate = price_multiple
     firm.months_since_hire_failure = FirmConfig.gamma
     assert firm.should_lower_wage()
     firm.set_wage_rate()
-    assert (1 - FirmConfig.delta <= firm.wage_rate < 1)
+    assert (price_multiple*(1 - FirmConfig.delta)
+            <= firm.wage_rate
+            < price_multiple)
 
 
 def test_price_increase():
     firm = initial_firm()
-    firm.wage_rate = 100
-    firm.goods_price = 1
+    firm.inventory = 0
+    firm.wage_rate = price_multiple*100
+    firm.goods_price = price_multiple
+    assert firm.goods_price <= firm.goods_price_ceiling()
     firm.set_goods_price()
-    assert (1 < firm.goods_price <= 1 + FirmConfig.upsilon)
+    assert (price_multiple
+            < firm.goods_price
+            <= price_multiple*(1 + FirmConfig.upsilon))
+
+
+def test_price_increase_limit():
+    firm = initial_firm()
+    firm.inventory = 0
+    firm.wage_rate = 1
+    firm.goods_price = price_multiple
+    assert firm.goods_price > firm.goods_price_ceiling()
+    firm.set_goods_price()
+    assert firm.goods_price == price_multiple
 
 
 def test_price_decrease():
     firm = initial_firm()
-    firm.goods_price = 1
+    firm.inventory = 10000
     firm.wage_rate = 1
+    firm.goods_price = price_multiple
+    assert firm.goods_price > firm.goods_price_floor()
     firm.set_goods_price()
-    assert (1 - FirmConfig.upsilon <= firm.goods_price < 1)
+    assert (price_multiple*(1 - FirmConfig.upsilon)
+            <= firm.goods_price
+            < price_multiple)
+
+
+def test_price_decrease_limit():
+    firm = initial_firm()
+    firm.inventory = 10000
+    firm.goods_price = price_multiple
+    firm.wage_rate = price_multiple * 100
+    assert firm.goods_price <= firm.goods_price_floor()
+    firm.set_goods_price()
+    assert firm.goods_price == price_multiple
 
 
 def test_production_process():
     firm = initial_firm()
-    for hh in firm.model.households.agents:
+    for hh in firm.model.households:
         firm.hire(hh)
     assert firm.inventory == 0
     firm.produce_output()
     expected_output = production_amount(
-        sum([o.labour_amount for o in firm.model.households.agents])
+        sum([o.labour_amount for o in firm.model.households])
     )
     assert firm.inventory == expected_output
     firm.produce_output()
@@ -157,7 +204,7 @@ def test_production_process():
 def test_pay_wages():
     firm = initial_firm()
     firm.wage_rate = 2
-    for hh in firm.model.households.agents:
+    for hh in firm.model.households:
         hh.liquidity = 0
         firm.hire(hh)
     num_workers = len(firm.workers)
@@ -188,7 +235,7 @@ def test_hire_failure():
 def test_calculate_buffer():
     firm = initial_firm()
     firm.wage_rate = 40
-    for hh in firm.model.households.agents:
+    for hh in firm.model.households:
         hh.liquidity = 0
         firm.hire(hh)
     num_workers = len(firm.workers)
@@ -199,28 +246,28 @@ def test_calculate_buffer():
     assert firm.calculate_required_buffer() == 2
     # No profits at all
     firm.distribute_profits()
-    assert all([o.liquidity == 0 for o in firm.model.households.agents])
+    assert all([o.liquidity == 0 for o in firm.model.households])
     # Still no profits
     firm.liquidity = 2
     firm.distribute_profits()
-    assert all([o.liquidity == 0 for o in firm.model.households.agents])
+    assert all([o.liquidity == 0 for o in firm.model.households])
     assert firm.liquidity == 2
     # Insufficient profits to distribute
     firm.liquidity += num_workers - 1
     firm.distribute_profits()
-    assert all([o.liquidity == 0 for o in firm.model.households.agents])
+    assert all([o.liquidity == 0 for o in firm.model.households])
     assert firm.liquidity == 2 + num_workers - 1
 
 
 def test_distribute_profits():
     firm = initial_firm()
     firm.liquidity = 80
-    for hh in firm.model.households.agents:
+    for hh in firm.model.households:
         hh.liquidity = 1
-    firm.model.households.agents[-1].liquidity = 2
+    firm.model.households[-1].liquidity = 2
     firm.distribute_profits()
-    assert all([o.liquidity >= 21 for o in firm.model.households.agents])
-    assert firm.model.households.agents[-1].liquidity == 42
+    assert all([o.liquidity >= 21 for o in firm.model.households])
+    assert firm.model.households[-1].liquidity == 42
 
 
 def test_marginal_cost():

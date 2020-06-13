@@ -56,7 +56,7 @@ class ScheduleByType(BaseScheduler):
         self.steps += 1
         self.time += 1
         for agent_class in self._agents.values():
-            agent_class.step()
+            agent_class.()
 
     def get_agent_count(self) -> int:
         """ Returns the total number of agents """

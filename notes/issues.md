@@ -2,17 +2,22 @@
 
 ## Bootstrap Issues (t=0)
 
-- The initial values of the wage rate, goods price, inventory, and liquidity for Firms are not specified.
+- The initial values of the wage rate, goods price, inventory, and
+  liquidity for Firms are not specified.
 
-- The initial values of the reservation wage and liquidity for Households are not specified.
+- The initial values of the reservation wage and liquidity for Households
+  are not specified.
 
-- If there is no liquidity put into the system, nothing happens. Liquidity is exogenous to the model
+- Liquidity is exogenous to the model. 
 
-- Adding household liquidity at 1 fails to start the model
+- Equation `(5)` implies that the intial value of the wage rate has to
+  be supplied and it must be greater than zero.
 
-- Adding both household and firm liquidity at 1 fails to start the model
+- Equation `(6)` and `(7)` imply that and intial value for the current demand
+  has to be supplied and it must be greater than zero.
 
-- Adding liquidity at 10000 for both households and firms fails to start the model.
+- Equation `(10)` implies that the intial value of the goods price has
+  to be supplied and it must be greater than zero.
 
 ## Assumptions stated in paper
 
@@ -50,7 +55,7 @@
 
 - Wages rises and cuts apply all workers in a firm immediately
 
-- Workers can change jobs immediately, but are fired with one months notice
+- Workers can change jobs immediately, but are fired with one month's notice
 
 
 ## Issues
@@ -97,6 +102,16 @@
     inventory or projected inventory) or just a simple mean of the prices
     per firm? The former helps weight high prices.
 
+12. A firm will not hire speculatively. Therefore if it ends up with
+    zero inventory, demand and workers it effectively exits the economy
+
+13. Only a worker paid less than their reservation wage searches for
+    another job. A worker put on notice does not change their behaviour.
+
+14. Unsatisfied demand isn't clearly specified. Is the shortfall from 95%
+    of planned demand, or the shortfall from the planned demand. Is it
+    availability, affordability or both?
+
 ## Workaround assumptions for issues
 
 1.  Use equation 11
@@ -141,3 +156,13 @@
 11. The goods prices from each firm are added up and divided by the number of
     firms.  It is assumed that the household only knows about prices of goods at
     the planning stage.
+
+12. The demand for t=0 is given to the model exogenously at startup.
+
+13. Workers continue to seach minimally for jobs when on notice. The
+    inconsistency in the model is maintained.
+
+14. The satisfaction amount is the whole number lower than 5% of the
+    planned daily amount of goods. Unsatisfied demand is any 'remaining
+    demand' above the satisfaction amount. This seems to fit with the
+    description of the buying algorithm in the paper.

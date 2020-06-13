@@ -81,51 +81,50 @@ class BaselineEconomyHousehold(Agent):
     liquidity: amount of monetary units household posseses
     preferred_suppliers: set of firms household prefers to buy from
     blackmarked_firms: firms that have failed to supply this month
-    current_wage: The wage received last month
     employer: The firm we're working for, None if unemployed
+    current_demand: How many goods to buy each day
     """
 
-    def __init__(self, unique_id, model) -> None:
+    def __init__(
+        self,
+        unique_id: int,
+        model,
+        initial_liquidity: int
+    ) -> None:
         """
         Customize the agent
         """
         super().__init__(unique_id, model)
         self.reservation_wage = HouseholdConfig.initial_reservation_wage
-        self.liquidity = HouseholdConfig.initial_liquidity
+        self.liquidity = initial_liquidity
         self.preferred_suppliers = self.random.sample(
-            model.firms.agents,
+            model.firms,
             HouseholdConfig.num_preferred_suppliers
         )
         self.employer = None
         self.blackmarked_firms = []
         self.is_month_start = self.model.is_month_start
         self.is_month_end = self.model.is_month_end
-
-    def step(self) -> None:
-        """
-        Run the household step processes
-        """
-        if self.is_month_start():
-            self.month_start()
-        self.day()
-        if self.is_month_end():
-            self.month_end()
+        self.reset_monthly_stats()
 
     def month_start(self) -> None:
         """
         Run the month start household procedures
         """
+        if not self.is_month_start():
+            return
+        self.reset_monthly_stats()
         # Look for cheaper vendors if household feels like it
         if self.with_probability(HouseholdConfig.psi_price):
             self.find_cheaper_vendor()
         # Dump a failed vendor if household feels like it
         if self.with_probability(HouseholdConfig.psi_quant):
-            self.find_capable_vendor()
+            self.find_better_vendor()
         # Clear the blackmark list
         self.blackmarked_firms = []
         # Look for a job if household wants to
         if self.is_unhappy_at_work():
-            self.look_for_work()
+            self.look_for_new_job()
         self.plan_consumption()
 
     def day(self) -> None:
@@ -138,6 +137,8 @@ class BaselineEconomyHousehold(Agent):
         """
         Run the month end household procedures
         """
+        if not self.is_month_end():
+            return
         self.adjust_reservation_wage()
 
 # MONTH START
@@ -146,6 +147,7 @@ class BaselineEconomyHousehold(Agent):
         """
         Look for a firm offereing cheaper goods
         """
+        self.looked_for_cheaper_vendor = True
         # Pick an existing supplier to market test and calculate the
         # price the new supplier needs to beat
         supplier_index = range(0, len(self.preferred_suppliers) - 1)
@@ -157,31 +159,35 @@ class BaselineEconomyHousehold(Agent):
         # Change supplier if the price is right
         new_firm = self.select_new_firm()
         if new_firm.goods_price < change_price:
+            self.found_cheaper_vendor = True
             self.preferred_suppliers[target_index] = new_firm
 
-    def find_capable_vendor(self) -> None:
+    def find_better_vendor(self) -> None:
         """
         If the household has been let down look for new suppliers
         """
         # Nothing to do if all firms have delivered
         if not self.blackmarked_firms:
             return
+        self.looked_for_better_vendor = True
         target_firm = self.select_blackmarked_firm()
         # The firm may already have been replaced by price competition
         # In which case 'index' will throw an error we need to catch
         try:
             target_index = self.preferred_suppliers.index(target_firm)
             self.preferred_suppliers[target_index] = self.select_new_firm()
+            self.found_better_vendor = True
         except ValueError:
-            pass
+            self.vendor_already_replaced = True
 
-    def look_for_work(self) -> None:
+    def look_for_new_job(self) -> None:
         """
         Look for another job
         Look harder if the household is unemployed or
         dissatisfied with the current job
         """
         # Look at more firms if household is unemployed
+        self.looked_for_new_job = True
         num_searches = HouseholdConfig.beta if self.is_unemployed() else 1
         for _ in range(num_searches):
             potential_employer = self.select_new_employer()
@@ -189,6 +195,7 @@ class BaselineEconomyHousehold(Agent):
                 if self.employer is not None:
                     self.employer.quit_job(self)
                 potential_employer.hire(self)
+                self.found_new_job = True
                 return
 
     def plan_consumption(self) -> None:
@@ -196,16 +203,25 @@ class BaselineEconomyHousehold(Agent):
         Work out the daily consumption amount
         Calculates an integer amount
         """
-        average_price = sum(
+        self.average_goods_price = sum(
             [o.goods_price for o in self.preferred_suppliers]
         ) / len(self.preferred_suppliers)
         try:
-            self.planned_daily_consumption = planned_consumption_amount(
+            self.planned_consumption = planned_consumption_amount(
                 self.liquidity,
-                average_price
-            ) // self.model.month_length
+                self.average_goods_price
+            )
+            self.current_demand = (
+                self.planned_consumption // self.model.month_length
+            )
+            self.planned_savings = (
+                self.liquidity -
+                self.planned_consumption * self.average_goods_price
+            )
         except ZeroDivisionError:
-            self.planned_daily_consumption = math.inf
+            self.planned_consumption = math.inf
+            self.current_demand = math.inf
+            self.planned_savings = self.liquidity
 
 # DAILY
 
@@ -217,7 +233,11 @@ class BaselineEconomyHousehold(Agent):
         self.model.random.shuffle(self.preferred_suppliers)
         # Obtain the required amount of goods from
         # the preferred suppliers
-        required_amount = self.planned_daily_consumption
+        required_amount = self.current_demand
+        satisfaction_amount = (math.floor(
+                required_amount *
+                (1 - HouseholdConfig.satisfaction_fraction)
+        ))
         for vendor in self.preferred_suppliers:
             transaction_amount = self.check_vendor_stock(
                 vendor,
@@ -231,8 +251,10 @@ class BaselineEconomyHousehold(Agent):
             required_amount -= transaction_amount
             # Stop checking firms if the household
             # has bought enough stuff
-            if self.is_satisfied(required_amount):
+            if required_amount <= satisfaction_amount:
                 return
+        # Record unsatisfied demand
+        self.unsatisfied_demand += required_amount - satisfaction_amount
 
 # MONTH END
 
@@ -260,6 +282,20 @@ class BaselineEconomyHousehold(Agent):
         return self.model.labour_supply
 
 # HELPERS
+
+    def reset_monthly_stats(self):
+        """
+        Reset the monthly recording attributes
+        """
+        self.unsatisfied_demand = 0
+        self.demand_constraints_suffered = len(self.blackmarked_firms)
+        # Reset decision flags
+        self.looked_for_cheaper_vendor = False
+        self.found_cheaper_vendor = False
+        self.looked_for_better_vendor = False
+        self.found_better_vendor = False
+        self.looked_for_new_job = False
+        self.found_new_job = False
 
     def check_vendor_stock(self, firm, required_amount: int) -> int:
         """
@@ -310,7 +346,7 @@ class BaselineEconomyHousehold(Agent):
         Select a new firm from the list of firms
         Filter out existing suppliers
         """
-        firms = self.model.firms.agents
+        firms = self.model.firms
         result = self.random.choice(firms)
         # If we've picked a current firm have another go
         while result in self.preferred_suppliers:
@@ -322,7 +358,7 @@ class BaselineEconomyHousehold(Agent):
         Select a new potential employer filter out current
         employer
         """
-        firms = self.model.firms.agents
+        firms = self.model.firms
         result = self.random.choice(firms)
         while self.employer is not None and result == self.employer:
             result = self.random.choice(firms)
@@ -376,14 +412,6 @@ class BaselineEconomyHousehold(Agent):
                  new_employer.wage_rate > self.employer.wage_rate)
             )
         )
-
-    def is_satisfied(self, amount) -> bool:
-        """
-        Have we bought enough stuff?
-        """
-        return ((self.planned_daily_consumption - amount) >
-                (self.planned_daily_consumption *
-                HouseholdConfig.satisfaction_fraction))
 
     def is_unemployed(self) -> bool:
         """

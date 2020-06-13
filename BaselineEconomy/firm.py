@@ -15,16 +15,23 @@ class FirmConfig:
     initial_liquidity = 0
 
     # Price of goods at each firm at t=0
+    # Required due to Eq (10)
     # Value not stated in paper
-    initial_goods_price = 0
+    initial_goods_price = 30
 
     # Amount of inventory in each firm at t=0
     # Value not stated in paper
     initial_inventory = 0
 
     # Initial wage rate at t=0
+    # Required due to Eq (5)
     # Value not stated in paper
-    initial_wage_rate = 0
+    initial_wage_rate = 63 * initial_goods_price
+
+    # The expected demand for goods per month
+    # Required due to Eq (6) and Eq (7)
+    # Value not stated in paper
+    expected_demand = 1
 
     # Calibration values (Table 1)
     #
@@ -96,20 +103,25 @@ class BaselineEconomyFirm(Agent):
     wage_rate: the price the firm will pay for labour power
     """
 
-    def __init__(self, unique_id, model) -> None:
+    def __init__(
+        self,
+        unique_id: int,
+        model,
+        initial_liquidity: int
+    ) -> None:
         """
         Customize the agent
         """
         super().__init__(unique_id, model)
-        self.liquidity = FirmConfig.initial_liquidity
+        self.liquidity = initial_liquidity
         self.goods_price = FirmConfig.initial_goods_price
         self.wage_rate = FirmConfig.initial_wage_rate
         self.inventory = FirmConfig.initial_inventory
+        self.current_demand = FirmConfig.expected_demand
         self.worker_on_notice = None
         self.workers = []
         self.has_open_position = False
         self.months_since_hire_failure = 0
-        self.current_demand = 0
         # Constants
         self.is_month_start = self.model.is_month_start
         self.is_month_end = self.model.is_month_end
@@ -118,27 +130,21 @@ class BaselineEconomyFirm(Agent):
             self.model.labour_supply *
             self.model.month_length
         )
-
-    def step(self) -> None:
-        """
-        Run the firm step processes
-        """
-        if self.is_month_start():
-            self.month_start()
-        self.day()
-        if self.is_month_end():
-            self.month_end()
+        self.reset_monthly_stats()
 
     def month_start(self) -> None:
         """
         Run the month start firm procedures
         """
+        if not self.is_month_start():
+            return
+        self.reset_monthly_stats()
         self.set_wage_rate()
         self.manage_workforce()
         # Is the firm confident enough to change its price?
         if self.with_probability(FirmConfig.theta):
             self.set_goods_price()
-        # Reset demand counter
+        # Reset monthly accumulators
         self.current_demand = 0
 
     def day(self) -> None:
@@ -151,6 +157,8 @@ class BaselineEconomyFirm(Agent):
         """
         Run the month end firm procedures
         """
+        if not self.is_month_end():
+            return
         self.pay_wages()
         self.distribute_profits()
         self.check_for_hire_failure()
@@ -162,9 +170,13 @@ class BaselineEconomyFirm(Agent):
         Changes the wage rates up or down
         """
         if self.should_raise_wage():
+            self.raised_wage = True
             self.wage_rate *= (1 + wage_adjustment(self.random))
+            self.wage_rate = math.ceil(self.wage_rate)
         elif self.should_lower_wage():
+            self.lowered_wage = True
             self.wage_rate *= (1 - wage_adjustment(self.random))
+            self.wage_rate = max(1, math.floor(self.wage_rate))
 
     def manage_workforce(self) -> None:
         """
@@ -173,6 +185,7 @@ class BaselineEconomyFirm(Agent):
         # If inventory is too high, either cancel outstanding notice
         # or offer a new position
         if self.inventory < self.inventory_floor():
+            self.inventories_too_low = True
             self.has_open_position = self.worker_on_notice is None
             self.worker_on_notice = None
 
@@ -183,6 +196,7 @@ class BaselineEconomyFirm(Agent):
         # Give notice to a worker if inventories are too high
         # Cancel any open position
         if self.inventory > self.inventory_ceiling():
+            self.inventories_too_high = True
             self.has_open_position = False
             self.give_notice()
 
@@ -191,10 +205,23 @@ class BaselineEconomyFirm(Agent):
         Adjust the price up if inventories are too low
         and down if inventories are too high
         """
-        if self.goods_price < self.goods_price_floor():
+        self.considered_price_change = (
+            self.inventories_too_low or
+            self.inventories_too_high
+        )
+        self.recent_demand = self.current_demand
+        self.current_marginal_cost = self.marginal_cost()
+        if (self.inventory < self.inventory_floor() and
+                self.goods_price <= self.goods_price_ceiling()):
+            self.raised_goods_price = True
             self.goods_price *= (1 + price_adjustment(self.random))
-        elif self.goods_price > self.goods_price_ceiling():
+            self.goods_price = math.ceil(self.goods_price)
+
+        elif (self.inventory > self.inventory_ceiling() and
+                self.goods_price > self.goods_price_floor()):
+            self.lowered_goods_price = True
             self.goods_price *= (1 - price_adjustment(self.random))
+            self.goods_price = max(1, math.floor(self.goods_price))
 
 # DAILY
 
@@ -216,6 +243,11 @@ class BaselineEconomyFirm(Agent):
         it affordable
         """
         num_workers = len(self.workers)
+        # Below a deminimis we can't pay anybody
+        # Slash wages and try again next month
+        if self.liquidity < num_workers:
+            self.wage_rate = 1
+            return
         if self.liquidity < num_workers * self.wage_rate:
             self.wage_rate = self.liquidity // num_workers
         for hh in self.workers:
@@ -245,6 +277,18 @@ class BaselineEconomyFirm(Agent):
             self.months_since_hire_failure += 1
 
 # HELPERS
+
+    def reset_monthly_stats(self):
+        """
+        Reset the monthly recording attributes
+        """
+        self.raised_wage = False
+        self.lowered_wage = False
+        self.considered_price_change = False
+        self.inventories_too_low = False
+        self.inventories_too_high = False
+        self.raised_goods_price = False
+        self.lowered_goods_price = False
 
     def marginal_cost(self) -> float:
         """
@@ -303,6 +347,8 @@ class BaselineEconomyFirm(Agent):
         """
         Clear up when a worker leaves the firm
         """
+        if self.worker_on_notice == worker:
+            self.worker_on_notice = None
         self.workers.remove(worker)
         worker.employer = None
 
@@ -336,13 +382,13 @@ class BaselineEconomyFirm(Agent):
         and rounded down to the nearest integer value
         Return the total amount distributed
         """
-        total_shares = sum([o.liquidity for o in self.model.households.agents])
+        total_shares = sum([o.liquidity for o in self.model.households])
         try:
             dividend_per_share = profits / total_shares
         except ZeroDivisionError:
             dividend_per_share = 0
         total_paid = 0
-        for hh in self.model.households.agents:
+        for hh in self.model.households:
             dividend = math.floor(hh.liquidity * dividend_per_share)
             hh.liquidity += dividend
             total_paid += dividend
