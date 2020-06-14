@@ -11,7 +11,7 @@ from mesa.visualization.UserParam import UserSettableParameter
 employed_chart = ChartModule(
     [
         {"Label": "Employed", "Color": "Black"},
-        {"Label": "On Notice", "Color": "Red"}
+        # {"Label": "On Notice", "Color": "Red"}
     ],
     data_collector_name='datacollector'
 )
@@ -34,8 +34,8 @@ agent_bar = BarChartModule(
 
 household_chart = ChartModule(
     [
-        {"Label": "Demand", "Color": "Green"},
-        {"Label": "HH Liquidity", "Color": "Blue"}
+        {"Label": "Unsatisfied Demand", "Color": "Green"},
+        # {"Label": "HH Liquidity", "Color": "Blue"}
     ]
 )
 model_params = {
@@ -58,7 +58,7 @@ model_params = {
 
 server = ModularServer(
     BaselineEconomyModel,
-    [employed_chart, firm_chart, price_chart, household_chart],
+    [employed_chart, household_chart],
     "Baseline Economy",
     model_params,
 )

@@ -26,32 +26,32 @@ def test_model_step():
     old_firms = model.firms
     old_hh = model.households
     # Model starts in month start mode
-    assert old_firms[0].is_month_start()
-    assert old_hh[0].is_month_start()
-    assert not old_firms[0].is_month_end()
-    assert not old_hh[0].is_month_end()
+    assert old_firms[0].model.schedule.is_month_start()
+    assert old_hh[0].model.schedule.is_month_start()
+    assert not old_firms[0].model.schedule.is_month_end()
+    assert not old_hh[0].model.schedule.is_month_end()
     # Next 19 days should be neither start nor end
     for _ in range(model.month_length - 2):
         model.step()
         assert model.firms == old_firms
         assert model.households == old_hh
-        assert not old_firms[0].is_month_start()
-        assert not old_hh[0].is_month_start()
-        assert not old_firms[0].is_month_end()
-        assert not old_hh[0].is_month_end()
+        assert not old_firms[0].model.schedule.is_month_start()
+        assert not old_hh[0].model.schedule.is_month_start()
+        assert not old_firms[0].model.schedule.is_month_end()
+        assert not old_hh[0].model.schedule.is_month_end()
     # Next day should be month end
     model.step()
     assert model.firms == old_firms
     assert model.households == old_hh
-    assert not old_firms[0].is_month_start()
-    assert not old_hh[0].is_month_start()
-    assert old_firms[0].is_month_end()
-    assert old_hh[0].is_month_end()
+    assert not old_firms[0].model.schedule.is_month_start()
+    assert not old_hh[0].model.schedule.is_month_start()
+    assert old_firms[0].model.schedule.is_month_end()
+    assert old_hh[0].model.schedule.is_month_end()
     # Then back to beginning of month again
     model.step()
     assert model.firms == old_firms
     assert model.households == old_hh
-    assert old_firms[0].is_month_start()
-    assert old_hh[0].is_month_start()
-    assert not old_firms[0].is_month_end()
-    assert not old_hh[0].is_month_end()
+    assert old_firms[0].model.schedule.is_month_start()
+    assert old_hh[0].model.schedule.is_month_start()
+    assert not old_firms[0].model.schedule.is_month_end()
+    assert not old_hh[0].model.schedule.is_month_end()

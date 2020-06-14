@@ -1,19 +1,14 @@
 from .household import BaselineEconomyHousehold, HouseholdConfig
 from .firm import BaselineEconomyFirm, FirmConfig
-from mesa.time import BaseScheduler, StagedActivation
+from .schedule import Scheduler
 from mesa.datacollection import DataCollector
 from mesa import Model
+from typing import List, Tuple
 
 
 class BaselineEconomyModel(Model):
     """
-    The model class holds the model-level attributes, manages the agents,
-    and generally handles the global level of our model.
-    There is only one model-level parameter: how many agents the model
-    contains. When a new model is started, we want it to populate itself
-    with the given number of agents.
-    The scheduler is a special model component which controls the order
-    in which agents are activated.
+    A Baseline Economy
     """
 
     def __init__(
@@ -21,35 +16,27 @@ class BaselineEconomyModel(Model):
         num_households=1000,
         num_firms=100,
         household_liquidity=HouseholdConfig.initial_liquidity,
-        firm_liquidity=FirmConfig.initial_liquidity
+        firm_liquidity=FirmConfig.initial_liquidity,
+        seed=None
     ):
         super().__init__()
-        self.schedule = StagedActivation(
-            self,
-            stage_list=["month_start", "day", "month_end"],
-            shuffle=False,
-        )
+        self.labour_supply = 1
         self.month_length = 21
-        self.firms = []
-        self.households = []
-
-        for i in range(num_firms):
-            agent = BaselineEconomyFirm(
+        self.firms = [
+            BaselineEconomyFirm(
                 i + 1000,
                 self,
                 firm_liquidity
-            )
-            self.schedule.add(agent)
-            self.firms.append(agent)
-
-        for i in range(num_households):
-            agent = BaselineEconomyHousehold(
+            ) for i in range(num_firms)]
+        self.households = [
+            BaselineEconomyHousehold(
                 i,
                 self,
                 household_liquidity
-            )
-            self.schedule.add(agent)
-            self.households.append(agent)
+            ) for i in range(num_households)]
+
+        # Set up the scheduler from the model
+        self.schedule = Scheduler(self)
 
         self.datacollector = DataCollector(
             model_reporters={
@@ -62,13 +49,6 @@ class BaselineEconomyModel(Model):
                 # "HH Liquidity": sum_hh_liquidity,
             },
         )
-
-    @property
-    def labour_supply(self) -> int:
-        """
-        Amount of labour power supplied by a household per day
-        """
-        return 1
 
     @property
     def num_firms(self) -> int:
@@ -84,30 +64,23 @@ class BaselineEconomyModel(Model):
         """
         return len(self.households)
 
-    def is_month_start(self) -> bool:
-        """
-        Are we at the start of a month?
-        Day 1, 22, 43, etc.
-        """
-        return (self.schedule.steps+1) % self.month_length == 1
-
-    def is_month_end(self) -> bool:
-        """
-        Are we at the end of a month?
-        Day 0, 21, 42, etc.
-        """
-        return (self.schedule.steps+1) % self.month_length == 0
-
     def step(self):
         """
         A model step. Used for collecting data and advancing the schedule
         """
         self.schedule.step()
-        if self.is_month_start():
+        # This is checks before the next step
+        # It's here to start collecting after the first
+        # month has completed
+        if self.schedule.is_month_start():
             self.datacollector.collect(self)
 
+    def calculate_shareholdings(self) -> (List[Tuple], int):
+        shareholding = [(o, o.liquidity) for o in self.households]
+        return (shareholding, sum([x[1] for x in shareholding]))
 
 # FUNCTIONS
+
 
 def count_employed(model):
     """

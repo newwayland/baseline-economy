@@ -27,8 +27,8 @@ def test_initial_household():
     assert hh.employer is None
     assert hh.is_unemployed()
     assert len(hh.blackmarked_firms) == 0
-    assert hh.is_month_start()
-    assert not hh.is_month_end()
+    assert hh.model.schedule.is_month_start()
+    assert not hh.model.schedule.is_month_end()
     assert hh.is_unhappy_at_work()
 
 

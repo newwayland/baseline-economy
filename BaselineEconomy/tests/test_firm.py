@@ -25,8 +25,8 @@ def test_initial_firm():
     assert firm.liquidity == FirmConfig.initial_liquidity
     assert firm.worker_on_notice is None
     assert len(firm.workers) == 0
-    assert firm.is_month_start()
-    assert not firm.is_month_end()
+    assert firm.model.schedule.is_month_start()
+    assert not firm.model.schedule.is_month_end()
     assert not firm.has_open_position
     assert not firm.should_lower_wage()
     assert not firm.should_raise_wage()
@@ -242,19 +242,20 @@ def test_calculate_buffer():
     assert (firm.calculate_required_buffer() ==
             num_workers * firm.wage_rate * FirmConfig.chi)
     firm.wage_rate = 4
+    to_households = firm.model.calculate_shareholdings()
     # Should round up
     assert firm.calculate_required_buffer() == 2
     # No profits at all
-    firm.distribute_profits()
+    firm.distribute_profits(*to_households)
     assert all([o.liquidity == 0 for o in firm.model.households])
     # Still no profits
     firm.liquidity = 2
-    firm.distribute_profits()
+    firm.distribute_profits(*to_households)
     assert all([o.liquidity == 0 for o in firm.model.households])
     assert firm.liquidity == 2
     # Insufficient profits to distribute
     firm.liquidity += num_workers - 1
-    firm.distribute_profits()
+    firm.distribute_profits(*to_households)
     assert all([o.liquidity == 0 for o in firm.model.households])
     assert firm.liquidity == 2 + num_workers - 1
 
@@ -265,7 +266,8 @@ def test_distribute_profits():
     for hh in firm.model.households:
         hh.liquidity = 1
     firm.model.households[-1].liquidity = 2
-    firm.distribute_profits()
+    to_households = firm.model.calculate_shareholdings()
+    firm.distribute_profits(*to_households)
     assert all([o.liquidity >= 21 for o in firm.model.households])
     assert firm.model.households[-1].liquidity == 42
 

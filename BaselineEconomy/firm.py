@@ -1,6 +1,7 @@
 from mesa import Agent
 from random import Random
 import math
+from typing import List, Tuple
 
 
 # CONFIG
@@ -123,8 +124,6 @@ class BaselineEconomyFirm(Agent):
         self.has_open_position = False
         self.months_since_hire_failure = 0
         # Constants
-        self.is_month_start = self.model.is_month_start
-        self.is_month_end = self.model.is_month_end
         self.marginal_cost_deflator = (
             FirmConfig.lambda_val *
             self.model.labour_supply *
@@ -136,8 +135,6 @@ class BaselineEconomyFirm(Agent):
         """
         Run the month start firm procedures
         """
-        if not self.is_month_start():
-            return
         self.reset_monthly_stats()
         self.set_wage_rate()
         self.manage_workforce()
@@ -157,10 +154,7 @@ class BaselineEconomyFirm(Agent):
         """
         Run the month end firm procedures
         """
-        if not self.is_month_end():
-            return
         self.pay_wages()
-        self.distribute_profits()
         self.check_for_hire_failure()
 
 # MONTH START
@@ -254,7 +248,9 @@ class BaselineEconomyFirm(Agent):
             hh.liquidity += self.wage_rate
         self.liquidity -= num_workers * self.wage_rate
 
-    def distribute_profits(self) -> None:
+    def distribute_profits(self,
+                           shareholding: List[Tuple],
+                           total_shares: int) -> None:
         """
         Distribute profits less a labour cost buffer
         to households
@@ -263,7 +259,9 @@ class BaselineEconomyFirm(Agent):
         if self.liquidity <= liquidity_buffer:
             return
         self.liquidity -= self.distribute_to_households(
-            self.liquidity - liquidity_buffer
+            self.liquidity - liquidity_buffer,
+            shareholding,
+            total_shares
         )
 
     def check_for_hire_failure(self) -> None:
@@ -376,21 +374,26 @@ class BaselineEconomyFirm(Agent):
         """
         return math.ceil(FirmConfig.chi * self.wage_rate * len(self.workers))
 
-    def distribute_to_households(self, profits: int) -> int:
+    def distribute_to_households(self,
+                                 profits: int,
+                                 shareholding: List[Tuple],
+                                 total_shares: int) -> int:
         """
         Distribute profits to households weighted by their current liquidity
         and rounded down to the nearest integer value
         Return the total amount distributed
+
+        shareholding: list of tuples [(shareholder, holding), ...]
         """
-        total_shares = sum([o.liquidity for o in self.model.households])
+        total_shares = sum([holder[1] for holder in shareholding])
         try:
             dividend_per_share = profits / total_shares
         except ZeroDivisionError:
             dividend_per_share = 0
         total_paid = 0
-        for hh in self.model.households:
-            dividend = math.floor(hh.liquidity * dividend_per_share)
-            hh.liquidity += dividend
+        for shareholder in shareholding:
+            dividend = math.floor(shareholder[1] * dividend_per_share)
+            shareholder[0].liquidity += dividend
             total_paid += dividend
         return total_paid
 

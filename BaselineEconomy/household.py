@@ -103,16 +103,12 @@ class BaselineEconomyHousehold(Agent):
         )
         self.employer = None
         self.blackmarked_firms = []
-        self.is_month_start = self.model.is_month_start
-        self.is_month_end = self.model.is_month_end
         self.reset_monthly_stats()
 
     def month_start(self) -> None:
         """
         Run the month start household procedures
         """
-        if not self.is_month_start():
-            return
         self.reset_monthly_stats()
         # Look for cheaper vendors if household feels like it
         if self.with_probability(HouseholdConfig.psi_price):
@@ -137,8 +133,6 @@ class BaselineEconomyHousehold(Agent):
         """
         Run the month end household procedures
         """
-        if not self.is_month_end():
-            return
         self.adjust_reservation_wage()
 
 # MONTH START
