@@ -8,16 +8,25 @@
 - The initial values of the reservation wage and liquidity for Households
   are not specified.
 
-- Liquidity is exogenous to the model. 
+- Whether the household starts with an employer is not specified (Type
+  B connection).
+
+- It is implied, but not explicitly specified, that
+  the household has a full initial set of 'n' preferred suppliers (Type
+  A connections)
+
+- Whether the household starts with a demand constraint is not specified. The 
+  month start procedure implies not.
 
 - Equation `(5)` implies that the intial value of the wage rate has to
   be supplied and it must be greater than zero.
 
-- Equation `(6)` and `(7)` imply that and intial value for the current demand
+- Equation `(6)` and `(7)` imply that an intial value for the current demand
   has to be supplied and it must be greater than zero.
 
 - Equation `(10)` implies that the intial value of the goods price has
   to be supplied and it must be greater than zero.
+
 
 ## Assumptions stated in paper
 
@@ -60,19 +69,26 @@
 
 ## Issues
 
-1.  Equation `(12)` seems redundant. Any x raised to a power y where `0 < y < 1` will always be less than x
+1.  Equation `(12)` seems redundant. It can only apply when the planned
+    consumption is less than one unit of goods (not > 1 as stated in
+    the paper). Since goods are necessarily atomic and discrete, not
+    continuous, this will always be rounded to zero by the time the
+    goods are purchased in any case.
 
-2.  Since purchase is done daily, the amount of consumption in a day appears
-    to be rounded down to an integer at that point and not before. Fractions
-    of a good cannot be purchased. Monthly consumption changes per household
-    are therefore in steps of 21.
+2.  Since purchases are done daily, the amount of consumption in a day
+    appears to be rounded down to an integer at that point and not
+    before. Logically fractions of a good cannot be purchased (if the
+    units are too large to service your customers demands you would
+    just split to a smaller integer base). Monthly consumption changes per
+    household are therefore in steps of 21 units of goods.
 
-3.  Blackmarked firms can already have been removed by the previous price competition step.
+3.  Blackmarked firms can already have been removed by the previous
+    price competition step.
 
-4.  The wage choice of the unemployed is ambiguous. It talks about a
+4.  The wage choice of the unemployed is ambiguous. The paper talks about a
     currently received wage, but as the household is unemployed they are
     not receiving a wage at that point. Other context suggests this should
-    be “reserved wage”.
+    have been “reserved wage”.
 
 5.  Employed Households will jump jobs if they find a new job offering
     more than the minimum of their current wage rate or the reservation
@@ -87,15 +103,14 @@
 
 8.  Does an open position persist beyond the end of the month?
 
-9.  The marginal cost calculation for firms is not specified. Is this
+9.  The marginal cost calculation for firms is not specified. Is it
     the current marginal cost (relative to the labour supply of the current
     workers), or the expected marginal costs (relative to the labour supply
-    of the current unemployed, or other people's workers), or something else.
+    of the current unemployed, or other people's workers), or something else?
 
 10. The numeric types of the variables are not specified. Both monetary
-    values and goods are usually whole units to avoid floating point
-    rounding issues, but the value of Zeta in the household calibration
-    suggests some sort of decimal type.
+    values and goods are usually managed as whole units to avoid floating
+    point rounding issues.
 
 11. The average goods price calculation isn't specified. Is this a
     weighted mean taking into account current inventory (or prior
@@ -112,13 +127,30 @@
     of planned demand, or the shortfall from the planned demand. Is it
     availability, affordability or both?
 
+15. The end of month distribution process for firms is underspecified. 
+    At what point is the household 'current liquidity' for distribution
+    calculated? Before wages, after wages, constantly after each firm
+    has distributed (which would require random selection of firms)?
+
+16. Is the order of the households randomly determined twice at the
+    month start, once for the month start procedure and once for the
+    day procedure, or is random order determined once and then used in
+    both procedures?
+
+17. The month start and month end processes run all firms before all
+    households, whereas the day process runs all Households before
+    Firms. This means households can only ever purchase from prior
+    production, not current production and firms always end days and
+    months with some unsold stock.
+
 ## Workaround assumptions for issues
 
-1.  Use equation 11
+1.  Use equation 11. The issue is handled by the daily algorithm in any
+    case which includes an affordability check.
 
 2.  The average price and planned monthly consumption is calculated as
     a floating point value, then integer divided by the month length to
-    give an round number of items to buy a day. This is to maintain
+    give a rounded down number of items to buy a day. This is to maintain
     consistency with the algorithm described in the original paper.
 
 3.  If the blackmark process picks a firm that has already been swapped
@@ -147,15 +179,14 @@
 
 10. Liquidity and inventory are managed as integers. As are goods prices
     and wage rates.  Only whole amounts can be created and
-    transferred. Zeta is scaled by 100 to compensate.  Precautionary
-    buffers are rounded up. Purchases are rounded down. Intermediate
-    calculations are floating point. This fits with the way those amounts
-    are usually managed. The units are generally atomic at the point
-    of transfer.
+    transferred. Precautionary buffers are rounded up. Purchases are
+    rounded down. Intermediate calculations are floating point. This
+    fits with the way these types of amounts are usually managed in
+    programs. The units are treated as atomic at the point of transfer.
 
-11. The goods prices from each firm are added up and divided by the number of
-    firms.  It is assumed that the household only knows about prices of goods at
-    the planning stage.
+11. The goods prices from each firm are added up and divided by the
+    number of firms.  It is assumed that the household only knows about
+    prices of goods at the planning stage.
 
 12. The demand for t=0 is given to the model exogenously at startup.
 
@@ -166,3 +197,17 @@
     planned daily amount of goods. Unsatisfied demand is any 'remaining
     demand' above the satisfaction amount. This seems to fit with the
     description of the buying algorithm in the paper.
+
+15. All firms first pay the wages. The 'current liquidity' is then
+    calculated once and all firms use that weighting to distribute
+    profits. Firms do not need to be randomised.  This  is a two pass
+    over the list of firms process and fits with the text of the paper
+    which appears to sequence wages first ('First, all firms pay their
+    workers a wage')
+
+16. The random order is determined once for the day procedure and the
+    same order is used if the month start process needs to be run. This
+    is ensures the household processing order changes only once per day.
+
+17. The order is maintained to be consistent with the paper - even
+    though it makes the programming awkward...
