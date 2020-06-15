@@ -18,7 +18,7 @@ using the [Project Mesa modelling framework](https://github.com/projectmesa/mesa
 - Click 'Start' or 'Step' to advance the model
 - Play about with the starting values and see if you can stop the economy inflating or deflating
 
-## Running the mode in batch mode
+## Running the model in batch mode
 
 The interactive session is relatively slow. To get thousands of cycles use the batch runner
 
