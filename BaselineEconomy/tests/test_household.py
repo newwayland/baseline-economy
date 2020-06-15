@@ -3,7 +3,6 @@ from BaselineEconomy.household import (
     HouseholdConfig,
     planned_consumption_amount
 )
-import math
 import pytest
 
 
