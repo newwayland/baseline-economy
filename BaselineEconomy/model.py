@@ -8,7 +8,17 @@ from typing import List, Tuple
 
 class BaselineEconomyModel(Model):
     """
-    A Baseline Economy
+    A Baseline Agent-Based Macroeconomic Model
+
+
+    which replicates the model described in:
+
+    Lengnick, Matthias. (2013). Agent-based macroeconomics: A
+    baseline model. Journal of Economic Behavior & Organization. 86.
+    10.1016/j.jebo.2012.12.021.
+
+    This version follows the paper as closely as possible
+
     """
 
     def __init__(
@@ -42,11 +52,12 @@ class BaselineEconomyModel(Model):
             model_reporters={
                 "Employed": count_employed,
                 "Unsatisfied Demand": percent_unsatisfied_demand,
-                # "On Notice": count_notice,
-                # "Inventory": sum_inventory,
-                # "Price": average_goods_price,
-                # "Wage": average_wage_rate,
-                # "HH Liquidity": sum_hh_liquidity,
+                "On Notice": count_notice,
+                "Inventory": sum_inventory,
+                "Price": average_goods_price,
+                "Wage": average_wage_rate,
+                "HH Savings": sum_hh_savings,
+                "Gini": compute_gini,
             },
         )
 
@@ -69,13 +80,24 @@ class BaselineEconomyModel(Model):
         A model step. Used for collecting data and advancing the schedule
         """
         self.schedule.step()
-        # This is checks before the next step
+        # This is essentially a check before the next step
         # It's here to start collecting after the first
         # month has completed
-        if self.schedule.is_month_start():
-            self.datacollector.collect(self)
+        # if self.schedule.is_month_start():
+        #     self.datacollector.collect(self)
+        self.datacollector.collect(self)
 
     def calculate_shareholdings(self) -> (List[Tuple], int):
+        """
+        Calculate the 'shareholding' of firms based upon the current
+        liquidty of the households.
+
+        Return a tuple containing a list of holders and their imputed holding,
+        and a total value for the holding.
+
+        Each firm then distributes their profits to households proportinal
+        to the holdings in this list
+        """
         shareholding = [(o, o.liquidity) for o in self.households]
         return (shareholding, sum([x[1] for x in shareholding]))
 
@@ -120,11 +142,24 @@ def percent_unsatisfied_demand(model):
         return 0
 
 
-def sum_hh_liquidity(model):
+def compute_gini(model):
+    """
+    Calculate the gini coefficient based upon household liquidity
+    """
+    try:
+        x = sorted([hh.liquidity for hh in model.households])
+        N = len(x)
+        B = sum(xi * (N - i) for i, xi in enumerate(x)) / (N * sum(x))
+        return 1 + (1 / N) - 2 * B
+    except ZeroDivisionError:
+        return 0
+
+
+def sum_hh_savings(model):
     """
     How much money households have
     """
-    return sum([hh.liquidity for hh in model.households])
+    return sum([hh.planned_savings for hh in model.households])
 
 
 def sum_inventory(model):

@@ -1,6 +1,6 @@
 # Replication of Agent-based macroeconomics: A baseline model
 
-## Bootstrap Issues (t=0)
+## Bootstrap Issues (day=0)
 
 - The initial values of the wage rate, goods price, inventory, and
   liquidity for Firms are not specified.
@@ -15,7 +15,7 @@
   the household has a full initial set of 'n' preferred suppliers (Type
   A connections)
 
-- Whether the household starts with a demand constraint is not specified. The 
+- Whether the household starts with a demand constraint is not specified. The
   month start procedure implies not.
 
 - Equation `(5)` implies that the intial value of the wage rate has to
@@ -28,15 +28,23 @@
   to be supplied and it must be greater than zero.
 
 
-## Assumptions stated in paper
+## Assumptions derived from paper
 
 - The supply of liquidity is exogenous and unchanging
 
-- Labour supply (l<sub>h</sub>) is fixed at 1 unit per household per tick
+- A single model tick is a Day,
 
-- A single model tick is a Day
+- Labour supply (l<sub>h</sub>) is fixed at 1 unit per household per Day
+
+- Productivity is fixed at a multiple of 3.
 
 - There are 21 Days is a Month
+
+- Month start is executed on day 1 of a month prior to the day process
+
+- Month end is execture on day 21 of a month after the day process
+
+- The model starts on day 1
 
 - Households only work for one firm at a time (number of Type B
   connections = 1)
@@ -62,9 +70,17 @@
 - Employees of a failing firm will take an immediate pay cut to keep
   their jobs. The wage rate is reduced to what the firm can afford
 
-- Wages rises and cuts apply all workers in a firm immediately
+- Wages rises and cuts apply to all workers in a firm immediately
 
 - Workers can change jobs immediately, but are fired with one month's notice
+
+- Firms will hire the first Household that is prepared to take the
+  offered wage rate, which means Households choose Firms, rather than
+  Firms choosing Households.
+
+- All workers are interchangeable (fully fungible) and their current
+  employment condition (unemployed or hired) has no impact on whether
+  a Firm will hire them.
 
 
 ## Issues
@@ -72,12 +88,12 @@
 1.  Equation `(12)` seems redundant. It can only apply when the planned
     consumption is less than one unit of goods (not > 1 as stated in
     the paper). Since goods are necessarily atomic and discrete, not
-    continuous, this will always be rounded to zero by the time the
-    goods are purchased in any case.
+    continuous, this will always be rounded idown to zero by the time
+    the goods are purchased.
 
 2.  Since purchases are done daily, the amount of consumption in a day
-    appears to be rounded down to an integer at that point and not
-    before. Logically fractions of a good cannot be purchased (if the
+    appears to be rounded down to a whole number of units at that point.
+    Logically fractions of a good cannot be purchased (if the
     units are too large to service your customers demands you would
     just split to a smaller integer base). Monthly consumption changes per
     household are therefore in steps of 21 units of goods.
@@ -90,7 +106,7 @@
     not receiving a wage at that point. Other context suggests this should
     have been “reserved wage”.
 
-5.  Employed Households will jump jobs if they find a new job offering
+5.  Employed Households will change jobs if they find a new job offering
     more than the minimum of their current wage rate or the reservation
     wage. The unemployed however will not take a job unless they get more
     than the reservation wage.
@@ -115,7 +131,7 @@
 11. The average goods price calculation isn't specified. Is this a
     weighted mean taking into account current inventory (or prior
     inventory or projected inventory) or just a simple mean of the prices
-    per firm? The former helps weight high prices.
+    per firm? The former would help weight high prices.
 
 12. A firm will not hire speculatively. Therefore if it ends up with
     zero inventory, demand and workers it effectively exits the economy
@@ -127,7 +143,7 @@
     of planned demand, or the shortfall from the planned demand. Is it
     availability, affordability or both?
 
-15. The end of month distribution process for firms is underspecified. 
+15. The end of month distribution process for firms is underspecified.
     At what point is the household 'current liquidity' for distribution
     calculated? Before wages, after wages, constantly after each firm
     has distributed (which would require random selection of firms)?
@@ -143,19 +159,25 @@
     production, not current production and firms always end days and
     months with some unsold stock.
 
+18. Although there is a crisis process in place for wages - which
+    activates when the employing firm runs out of money - there isn't
+    an equivalent 'fire sale' process for goods to get rid of excess
+    inventory.
+
 ## Workaround assumptions for issues
 
-1.  Use equation 11. The issue is handled by the daily algorithm in any
-    case which includes an affordability check.
+1.  Use equation 11. The day algorithm includes an affordability check
+    which constrains purchases to the budget available.
 
 2.  The average price and planned monthly consumption is calculated as
     a floating point value, then integer divided by the month length to
-    give a rounded down number of items to buy a day. This is to maintain
-    consistency with the algorithm described in the original paper.
+    give a rounded down number of items to buy per day. This is to maintain
+    consistency with the algorithm described in the paper.
 
 3.  If the blackmark process picks a firm that has already been swapped
-    out, leave it there. Don't look for another. It is assumed that the
-    households need for vengeance has been satisfied as the firm has gone.
+    out, stop the process. Don't look for another firm. It is assumed
+    that the households need for vengeance has been satisfied as the
+    firm has gone.
 
 4.  The unmployed only take a position if the wage is greater than their
     current reservation wage. The inconsistency in the model is maintained.
@@ -188,7 +210,7 @@
     number of firms.  It is assumed that the household only knows about
     prices of goods at the planning stage.
 
-12. The demand for t=0 is given to the model exogenously at startup.
+12. The demand for day=0 is given to the model exogenously at startup.
 
 13. Workers continue to seach minimally for jobs when on notice. The
     inconsistency in the model is maintained.
@@ -200,8 +222,8 @@
 
 15. All firms first pay the wages. The 'current liquidity' is then
     calculated once and all firms use that weighting to distribute
-    profits. Firms do not need to be randomised.  This  is a two pass
-    over the list of firms process and fits with the text of the paper
+    profits. Firms do not need to be randomised.  This requires two
+    passes over the list of firms and fits with the text of the paper
     which appears to sequence wages first ('First, all firms pay their
     workers a wage')
 
@@ -209,5 +231,6 @@
     same order is used if the month start process needs to be run. This
     is ensures the household processing order changes only once per day.
 
-17. The order is maintained to be consistent with the paper - even
-    though it makes the programming awkward...
+17. The order is maintained to be consistent with the paper.
+
+18. The processes are maintained to be consistent with the paper.
