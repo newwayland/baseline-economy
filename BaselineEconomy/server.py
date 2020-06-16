@@ -4,7 +4,7 @@ Configure visualization elements and instantiate a server
 
 from .model import BaselineEconomyModel  # noqa
 
-from mesa.visualization.ModularVisualization import ModularServer
+from .ModularVisualization import ModularServer
 from mesa.visualization.modules import ChartModule
 from mesa.visualization.UserParam import UserSettableParameter
 
