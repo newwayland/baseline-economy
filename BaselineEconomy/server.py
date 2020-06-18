@@ -57,7 +57,21 @@ model_params = {
         min_value=0,
         max_value=50000,
         step=100
-        )
+    ),
+    "firm_goods_price": UserSettableParameter(
+        "slider", "Initial Goods Price",
+        value=30,
+        min_value=1,
+        max_value=1000,
+        step=1
+    ),
+    "firm_wage_rate": UserSettableParameter(
+        "slider", "Initial Daily Wage Rate",
+        value=90,
+        min_value=1,
+        max_value=5000,
+        step=1
+    )
     }
 
 server = ModularServer(

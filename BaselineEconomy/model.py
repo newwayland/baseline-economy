@@ -27,6 +27,8 @@ class BaselineEconomyModel(Model):
         num_firms=100,
         household_liquidity=HouseholdConfig.initial_liquidity,
         firm_liquidity=FirmConfig.initial_liquidity,
+        firm_goods_price=FirmConfig.initial_goods_price,
+        firm_wage_rate=None,
         seed=None
     ):
         super().__init__()
@@ -36,7 +38,11 @@ class BaselineEconomyModel(Model):
             BaselineEconomyFirm(
                 i + 1000,
                 self,
-                firm_liquidity
+                firm_liquidity,
+                firm_goods_price,
+                (firm_wage_rate * self.month_length
+                    if firm_wage_rate is not None
+                    else FirmConfig.initial_wage_rate)
             ) for i in range(num_firms)]
         self.households = [
             BaselineEconomyHousehold(

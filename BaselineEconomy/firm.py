@@ -108,15 +108,17 @@ class BaselineEconomyFirm(Agent):
         self,
         unique_id: int,
         model,
-        initial_liquidity: int
+        initial_liquidity: int,
+        initial_goods_price: int,
+        initial_wage_rate: int,
     ) -> None:
         """
         Customize the agent
         """
         super().__init__(unique_id, model)
         self.liquidity = initial_liquidity
-        self.goods_price = FirmConfig.initial_goods_price
-        self.wage_rate = FirmConfig.initial_wage_rate
+        self.goods_price = initial_goods_price
+        self.wage_rate = initial_wage_rate
         self.inventory = FirmConfig.initial_inventory
         self.current_demand = FirmConfig.expected_demand
         self.worker_on_notice = None
