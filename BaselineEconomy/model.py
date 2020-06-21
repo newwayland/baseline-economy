@@ -93,20 +93,6 @@ class BaselineEconomyModel(Model):
         #     self.datacollector.collect(self)
         self.datacollector.collect(self)
 
-    def calculate_shareholdings(self) -> (List[Tuple], int):
-        """
-        Calculate the 'shareholding' of firms based upon the current
-        liquidty of the households.
-
-        Return a tuple containing a list of holders and their imputed holding,
-        and a total value for the holding.
-
-        Each firm then distributes their profits to households proportinal
-        to the holdings in this list
-        """
-        shareholding = [(o, o.liquidity) for o in self.households]
-        return (shareholding, sum([x[1] for x in shareholding]))
-
 # FUNCTIONS
 
 

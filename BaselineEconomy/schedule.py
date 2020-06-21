@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from typing import List, Tuple
+
 
 class Scheduler:
     """
@@ -38,6 +40,20 @@ class Scheduler:
         """
         return (self.steps+1) % self.month_length == 0
 
+    def calculate_shareholdings(self) -> (List[Tuple], int):
+        """
+        Calculate the 'shareholding' of firms based upon the current
+        liquidty of the households.
+
+        Return a tuple containing a list of holders and their imputed holding,
+        and a total value for the holding.
+
+        Each firm then distributes their profits to households proportinal
+        to the holdings in this list
+        """
+        shareholding = [(o, o.liquidity) for o in self.households]
+        return (shareholding, sum([x[1] for x in shareholding]))
+
     def step(self) -> None:
         # Set the model day number
         self.day += 1
@@ -62,9 +78,11 @@ class Scheduler:
             # Pay Wages
             for firm in self.firms:
                 firm.month_end()
+            # Calculate householder shareholdings
+            shareholder_details = self.calculate_shareholdings()
             # Distribute Profits
             for firm in self.firms:
-                firm.distribute_profits(*self.model.calculate_shareholdings())
+                firm.distribute_profits(*shareholder_details)
             for hh in self.households:
                 hh.month_end()
             self.month += 1

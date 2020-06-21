@@ -242,7 +242,7 @@ def test_calculate_buffer():
     assert (firm.calculate_required_buffer() ==
             num_workers * firm.wage_rate * FirmConfig.chi)
     firm.wage_rate = 4
-    to_households = firm.model.calculate_shareholdings()
+    to_households = firm.model.schedule.calculate_shareholdings()
     # Should round up
     assert firm.calculate_required_buffer() == 2
     # No profits at all
@@ -266,7 +266,7 @@ def test_distribute_profits():
     for hh in firm.model.households:
         hh.liquidity = 1
     firm.model.households[-1].liquidity = 2
-    to_households = firm.model.calculate_shareholdings()
+    to_households = firm.model.schedule.calculate_shareholdings()
     firm.distribute_profits(*to_households)
     assert all([o.liquidity >= 21 for o in firm.model.households])
     assert firm.model.households[-1].liquidity == 42
