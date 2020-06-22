@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: baseline
+  labels:
+    run: baseline
+  annotations:
+    service.beta.kubernetes.io/brightbox-load-balancer-listener-protocol: "http"
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    protocol: TCP
+    name: http
+    targetPort: baseline
+  selector:
+    run: baseline

@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: baseline
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      run: baseline
+  template:
+    metadata:
+      labels:
+        run: baseline
+    spec:
+      containers:
+      - name: baseline
+        image: baseline
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "50Mi"
+        ports:
+        - containerPort: 8521
+          name: baseline
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: baseline
+        readinessProbe:
+          httpGet:
+            path: /
+            port: baseline
+

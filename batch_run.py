@@ -4,7 +4,7 @@ from mesa.datacollection import DataCollector
 import matplotlib.pyplot as plt
 
 
-def excess_demand_figure(df):
+def excess_demand_figure(df, fname: str):
     plt.figure()
     df.plot.hist(
         bins=100,
@@ -24,11 +24,11 @@ def excess_demand_figure(df):
     plt.title("Excess Demand")
     plt.xlabel("Unsatisfied demand (in %)")
     plt.ylabel("Probability Density Function")
-    plt.savefig("/tmp/excess_demand.png")
+    plt.savefig(fname)
     plt.close()
 
 
-def employment_figure(df):
+def employment_figure(df, fname: str):
     plt.figure()
     df.plot.line(
         x="Year",
@@ -41,16 +41,16 @@ def employment_figure(df):
     plt.title("Employment")
     plt.xlabel("Years")
     plt.ylabel("Employed households")
-    plt.savefig("/tmp/employment.png")
+    plt.savefig(fname)
     plt.close()
 
 
 br_params = {
     # "seed": [42],
+    "firm_liquidity": [0],
+    "household_liquidity": [500, 5000],
     "num_households": [1000],
     "num_firms": [100],
-    "household_liquidity": [5000],
-    "firm_liquidity": [0],
 }
 
 # Run for 6000 months plus 1000 months burn in
@@ -72,6 +72,9 @@ if __name__ == "__main__":
     br.run_all()
     br_df = br.get_model_vars_dataframe()
     for i in range(len(br_df["Data Collector"])):
+        hh_liquidity = br_df["household_liquidity"][i]
+        firm_liquidity = br_df["firm_liquidity"][i]
+        marker = "_hh{0}_f{1}".format(hh_liquidity, firm_liquidity)
         if isinstance(br_df["Data Collector"][i], DataCollector):
             i_run_data = (
                 br_df["Data Collector"][i]
@@ -81,7 +84,16 @@ if __name__ == "__main__":
                 .reset_index(drop=True)
             )
             i_run_data["Year"] = (i_run_data.index.to_series() / 12)
-            i_run_data.to_csv("/tmp/BaselineEconomyModel_Step_Data.csv")
+            i_run_data.to_csv(
+                "/tmp/BaselineEconomyModel_Step_Data"
+                + marker + ".csv"
+            )
             plt.close('all')
-            excess_demand_figure(i_run_data)
-            employment_figure(i_run_data)
+            excess_demand_figure(
+                i_run_data,
+                "/tmp/excess_demand" + marker + ".png"
+            )
+            employment_figure(
+                i_run_data,
+                "/tmp/employment" + marker + ".png"
+            )
