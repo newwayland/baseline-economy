@@ -69,7 +69,7 @@ model_params = {
         "slider", "Initial Daily Wage Rate",
         value=90,
         min_value=1,
-        max_value=5000,
+        max_value=1000,
         step=1
     )
     }

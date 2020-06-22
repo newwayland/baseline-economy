@@ -288,6 +288,10 @@ class ModularServer(tornado.web.Application):
     # Handlers and other globals:
     page_handler = (r"/", PageHandler)
     socket_handler = (r"/ws", SocketHandler)
+    health_handler = (
+        r"/healthz",
+        tornado.web.ErrorHandler, {"status_code": 200}
+    )
     static_handler = (
         r"/static/(.*)",
         tornado.web.StaticFileHandler,
@@ -297,10 +301,16 @@ class ModularServer(tornado.web.Application):
         r"/local/(.*)", tornado.web.StaticFileHandler, {"path": ""}
     )
 
-    handlers = [page_handler, socket_handler, static_handler, local_handler]
+    handlers = [
+        page_handler,
+        socket_handler,
+        health_handler,
+        static_handler,
+        local_handler
+    ]
 
     settings = {
-        "debug": True,
+        "debug": False,
         "autoreload": False,
         "template_path": template_path,
     }
