@@ -28,3 +28,12 @@ The interactive session is relatively slow. To get thousands of cycles use the b
 - By default this will do a 7000 month run and save the statistics and
   graphs into the `/tmp` directory.
 - Edit the `batch_run.py` file to change the model run parameters.
+
+## Running the model on Kubernetes
+
+- Clone the repo into a directory
+- Run `make deploy`
+- Run `kubectl get service/baseline` to find the allocated external address
+- The model is available on `http://<external_address>`
+- Scale the number of replicates up or down
+  with `kubectl scale --replicas=<required replicas> deployment/baseline`

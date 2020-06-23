@@ -1,7 +1,0 @@
-resources:
-- deployment.yaml
-- service.yaml
-images:
-- name: baseline
-  newName: newwayland/baseline-economy
-  newTag: b2d9674

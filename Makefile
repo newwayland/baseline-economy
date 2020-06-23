@@ -12,7 +12,9 @@ push: container
 run: container
 	docker run --rm -it -p 8521:8521 --name test-${BIN} ${REGISTRY}/${BIN}:${VERSION}
 
-k8s_deploy: push
+k8s_push_deploy: push k8s_deploy
+
+k8s_deploy:
 	sh create_kustomize.sh ${REGISTRY}/${BIN} ${VERSION}
 	kubectl apply -k k8s
 
