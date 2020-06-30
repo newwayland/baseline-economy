@@ -64,6 +64,7 @@ class BaselineEconomyModel(Model):
                 "Price": average_goods_price,
                 "Wage": average_wage_rate,
                 "HH Savings": sum_hh_savings,
+                "Total Liquidity": sum_liquidity,
                 "Gini": compute_gini,
             },
         )
@@ -159,9 +160,30 @@ def compute_gini(model) -> float:
 
 def sum_hh_savings(model) -> float:
     """
-    How much money households have
+    How much money households expect to save
     """
     return sum([hh.planned_savings for hh in model.households])
+
+
+def sum_hh_liquidity(model) -> int:
+    """
+    How much money households have
+    """
+    return sum([hh.liquidity for hh in model.households])
+
+
+def sum_firm_liquidity(model) -> int:
+    """
+    How much money firms have
+    """
+    return sum([firm.liquidity for firm in model.firms])
+
+
+def sum_liquidity(model) -> int:
+    """
+    How much money is in the system
+    """
+    return sum_firm_liquidity(model) + sum_hh_liquidity(model)
 
 
 def sum_inventory(model) -> int:

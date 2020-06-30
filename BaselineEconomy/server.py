@@ -35,7 +35,8 @@ demand_chart = ChartModule(
 )
 savings_chart = ChartModule(
     [
-        {"Label": "HH Savings", "Color": "Blue"}
+        {"Label": "HH Savings", "Color": "Blue"},
+        {"Label": "Total Liquidity", "Color": "Black"}
     ]
 )
 gini_chart = ChartModule(
