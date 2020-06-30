@@ -3,7 +3,6 @@ from .firm import BaselineEconomyFirm, FirmConfig
 from .schedule import Scheduler
 from mesa.datacollection import DataCollector
 from mesa import Model
-from typing import List, Tuple
 
 
 class BaselineEconomyModel(Model):
@@ -14,8 +13,8 @@ class BaselineEconomyModel(Model):
     which replicates the model described in:
 
     Lengnick, Matthias. (2013). Agent-based macroeconomics: A
-    baseline model. Journal of Economic Behavior & Organization. 86.
-    10.1016/j.jebo.2012.12.021.
+    baseline model. Journal of Economic Behavior & Organization.
+    86.10.1016/j.jebo.2012.12.021.
 
     This version follows the paper as closely as possible
 
@@ -30,8 +29,9 @@ class BaselineEconomyModel(Model):
         firm_goods_price=FirmConfig.initial_goods_price,
         firm_wage_rate=None,
         seed=None
-    ):
+    ) -> None:
         super().__init__()
+        self.poverty_level = 1
         self.labour_supply = 1
         self.month_length = 21
         self.firms = [
@@ -57,8 +57,9 @@ class BaselineEconomyModel(Model):
         self.datacollector = DataCollector(
             model_reporters={
                 "Employed": count_employed,
-                "Unsatisfied Demand": percent_unsatisfied_demand,
                 "On Notice": count_notice,
+                "Poverty Level": count_poverty,
+                "Unsatisfied Demand": percent_unsatisfied_demand,
                 "Inventory": sum_inventory,
                 "Price": average_goods_price,
                 "Wage": average_wage_rate,
@@ -81,7 +82,7 @@ class BaselineEconomyModel(Model):
         """
         return len(self.households)
 
-    def step(self):
+    def step(self) -> None:
         """
         A model step. Used for collecting data and advancing the schedule
         """
@@ -93,35 +94,44 @@ class BaselineEconomyModel(Model):
         #     self.datacollector.collect(self)
         self.datacollector.collect(self)
 
+
 # FUNCTIONS
 
-
-def count_employed(model):
+def count_poverty(model) -> int:
     """
     Number of households employed
     """
-    return len(
-        [hh for hh in model.households if hh.employer is not None]
+    return sum(
+        [hh.poverty for hh in model.households]
     )
 
 
-def count_notice(model):
+def count_employed(model) -> int:
+    """
+    Number of households employed
+    """
+    return sum(
+        [hh.employer is not None for hh in model.households]
+    )
+
+
+def count_notice(model) -> int:
     """
     Number of firms with worker on notice
     """
-    return len(
-        [f for f in model.firms if f.worker_on_notice is not None]
+    return sum(
+        [f.worker_on_notice is not None for f in model.firms]
     )
 
 
-def sum_expected_demand(model):
+def sum_expected_demand(model) -> float:
     """
     Total expected demand over month
     """
     return sum([hh.current_demand for hh in model.households]) * 21
 
 
-def percent_unsatisfied_demand(model):
+def percent_unsatisfied_demand(model) -> float:
     """
     percentage of unsatisfied demand over expected demand
     """
@@ -134,7 +144,7 @@ def percent_unsatisfied_demand(model):
         return 0
 
 
-def compute_gini(model):
+def compute_gini(model) -> float:
     """
     Calculate the gini coefficient based upon household liquidity
     """
@@ -147,14 +157,14 @@ def compute_gini(model):
         return 0
 
 
-def sum_hh_savings(model):
+def sum_hh_savings(model) -> float:
     """
     How much money households have
     """
     return sum([hh.planned_savings for hh in model.households])
 
 
-def sum_inventory(model):
+def sum_inventory(model) -> int:
     """
     Total stock in hand
     """
@@ -163,7 +173,7 @@ def sum_inventory(model):
     )
 
 
-def average_goods_price(model):
+def average_goods_price(model) -> float:
     """
     Average price of goods
     """
@@ -171,7 +181,7 @@ def average_goods_price(model):
     return sum(prices) / len(prices)
 
 
-def average_wage_rate(model):
+def average_wage_rate(model) -> float:
     """
     Average wage rate
     """

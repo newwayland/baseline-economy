@@ -212,6 +212,7 @@ class BaselineEconomyHousehold(Agent):
                 self.liquidity -
                 self.planned_consumption * self.average_goods_price
             )
+            self.poverty = self.current_demand < self.model.poverty_level
         except ZeroDivisionError:
             self.planned_consumption = math.inf
             self.current_demand = math.inf
@@ -290,6 +291,7 @@ class BaselineEconomyHousehold(Agent):
         self.found_better_vendor = False
         self.looked_for_new_job = False
         self.found_new_job = False
+        self.poverty = False
 
     def check_vendor_stock(self, firm, required_amount: int) -> int:
         """

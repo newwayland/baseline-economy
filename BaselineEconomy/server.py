@@ -8,10 +8,11 @@ from .ModularVisualization import ModularServer
 from mesa.visualization.modules import ChartModule
 from mesa.visualization.UserParam import UserSettableParameter
 
-employed_chart = ChartModule(
+personal_chart = ChartModule(
     [
         {"Label": "Employed", "Color": "Black"},
-        {"Label": "On Notice", "Color": "Red"}
+        {"Label": "On Notice", "Color": "Red"},
+        {"Label": "Poverty Level", "Color": "Magenta"},
     ],
     data_collector_name='datacollector'
 )
@@ -71,13 +72,13 @@ model_params = {
         min_value=1,
         max_value=1000,
         step=1
-    )
+    ),
     }
 
 server = ModularServer(
     BaselineEconomyModel,
-    [employed_chart, firm_chart, price_chart, demand_chart, savings_chart,
-        gini_chart],
+    [personal_chart, firm_chart, price_chart, demand_chart,
+        savings_chart, gini_chart],
     "Baseline Economy",
     model_params,
 )
