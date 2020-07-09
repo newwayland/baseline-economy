@@ -164,15 +164,17 @@ class BaselineEconomyFirm(Agent):
     def set_wage_rate(self) -> None:
         """
         Changes the wage rates up or down
+        Rounds up to the nearest whole money unit on rising wage
+        Rounds down to zero on falling wages (Interns)
         """
         if self.should_raise_wage():
             self.raised_wage = True
             self.wage_rate *= (1 + wage_adjustment(self.random))
-            self.wage_rate = math.ceil(self.wage_rate)
+            self.wage_rate = max(1, math.ceil(self.wage_rate))
         elif self.should_lower_wage():
             self.lowered_wage = True
             self.wage_rate *= (1 - wage_adjustment(self.random))
-            self.wage_rate = max(1, math.floor(self.wage_rate))
+            self.wage_rate = math.floor(self.wage_rate)
 
     def manage_workforce(self) -> None:
         """
@@ -242,7 +244,7 @@ class BaselineEconomyFirm(Agent):
         # Below a deminimis we can't pay anybody
         # Slash wages and try again next month
         if self.liquidity < num_workers:
-            self.wage_rate = 1
+            self.wage_rate = 0
             return
         if self.liquidity < num_workers * self.wage_rate:
             self.wage_rate = self.liquidity // num_workers

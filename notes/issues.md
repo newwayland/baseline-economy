@@ -19,7 +19,7 @@
   month start procedure implies not.
 
 - Equation `(5)` implies that the intial value of the wage rate has to
-  be supplied and it must be greater than zero.
+  be supplied and is expected to be greater than zero
 
 - Equation `(6)` and `(7)` imply that an intial value for the current demand
   has to be supplied and it must be greater than zero.
@@ -164,6 +164,14 @@
     an equivalent 'fire sale' process for goods to get rid of excess
     inventory.
 
+19. There is an assumption throughout the paper of infinitely divisible
+    money and goods. Whereas money and goods are indivisible and wages are
+    in whole units over a period of time. (In this case a month). This causes
+    issues when the model drives prices down to unit levels.
+
+20. Households select the firms they purchase from within their preferred
+    supplier list randomly and not by lowest price first.
+
 ## Workaround assumptions for issues
 
 1.  Use equation 11. The day algorithm includes an affordability check
@@ -234,3 +242,9 @@
 17. The order is maintained to be consistent with the paper.
 
 18. The processes are maintained to be consistent with the paper.
+
+19. Wages can be driven to zero (Interns) but goods prices and goods can
+    be no lower than 1. If the goods price drops to zero you get infinite
+    demand and half a car isn't useful.
+
+20. The order is maintained to be consistent with the paper.

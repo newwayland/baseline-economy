@@ -130,6 +130,13 @@ def test_wage_increase():
     assert (price_multiple
             < firm.wage_rate
             <= price_multiple*(1 + FirmConfig.delta))
+    firm.wage_rate = 0
+    assert firm.should_raise_wage()
+    firm.set_wage_rate()
+    assert firm.wage_rate == 1
+    assert firm.should_raise_wage()
+    firm.set_wage_rate()
+    assert firm.wage_rate == 2
 
 
 def test_wage_decrease():
@@ -141,6 +148,16 @@ def test_wage_decrease():
     assert (price_multiple*(1 - FirmConfig.delta)
             <= firm.wage_rate
             < price_multiple)
+    firm.wage_rate = 2
+    assert firm.wage_rate == 2
+    assert firm.should_lower_wage()
+    firm.set_wage_rate()
+    assert firm.wage_rate == 1
+    assert firm.should_lower_wage()
+    firm.set_wage_rate()
+    assert firm.wage_rate == 0
+    firm.set_wage_rate()
+    assert firm.wage_rate == 0
 
 
 def test_price_increase():
