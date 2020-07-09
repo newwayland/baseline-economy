@@ -1,4 +1,5 @@
 from mesa import Agent
+from operator import attrgetter
 import math
 
 
@@ -224,8 +225,8 @@ class BaselineEconomyHousehold(Agent):
         """
         Buy goods from firms
         """
-        # Put the preferred suppliers in a random order
-        self.model.random.shuffle(self.preferred_suppliers)
+        # Put the preferred suppliers in price order
+        self.preferred_suppliers.sort(key=attrgetter("goods_price"))
         # Obtain the required amount of goods from
         # the preferred suppliers
         required_amount = self.current_demand
