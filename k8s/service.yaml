@@ -4,14 +4,10 @@ metadata:
   name: baseline
   labels:
     run: baseline
-  annotations:
-    service.beta.kubernetes.io/brightbox-load-balancer-listener-protocol: "http"
 spec:
-  type: LoadBalancer
+  selector:
+    run: baseline
   ports:
   - port: 80
     protocol: TCP
-    name: http
-    targetPort: baseline
-  selector:
-    run: baseline
+    name: web

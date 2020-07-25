@@ -34,6 +34,5 @@ The interactive session is relatively slow. To get thousands of cycles use the b
 - Clone the repo into a directory
 - Run `make deploy`
 - Run `kubectl get service/baseline` to find the allocated external address
-- The model is available on `http://<external_address>`
 - Scale the number of replicates up or down
   with `kubectl scale --replicas=<required replicas> deployment/baseline`
