@@ -8,6 +8,6 @@ spec:
   selector:
     run: baseline
   ports:
-  - port: 80
-    protocol: TCP
-    name: web
+    - name: web
+      port: 80
+      targetPort: baseline
