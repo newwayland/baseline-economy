@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: baseline
+  name: price-shopping
   labels:
-    run: baseline
+    run: price-shopping
 spec:
   selector:
-    run: baseline
+    run: price-shopping
   ports:
     - name: web
       port: 80
-      targetPort: baseline
+      targetPort: price-shopping
