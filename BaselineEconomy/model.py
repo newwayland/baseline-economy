@@ -16,7 +16,9 @@ class BaselineEconomyModel(Model):
     baseline model. Journal of Economic Behavior & Organization.
     86.10.1016/j.jebo.2012.12.021.
 
-    This version follows the paper as closely as possible
+    In the base model households select firms to buy goods from randomly
+    from their list of preferred suppliers. In this variant households
+    always go to the cheapest firm.
 
     """
 
