@@ -11,6 +11,7 @@ from mesa.visualization.UserParam import UserSettableParameter
 personal_chart = ChartModule(
     [
         {"Label": "Employed", "Color": "Black"},
+        {"Label": "Private Employed", "Color": "Blue"},
         {"Label": "On Notice", "Color": "Red"},
         {"Label": "Poverty Level", "Color": "Magenta"},
     ],
@@ -18,6 +19,7 @@ personal_chart = ChartModule(
 )
 firm_chart = ChartModule(
     [
+        {"Label": "JG Inventory", "Color": "Black"},
         {"Label": "Inventory", "Color": "Blue"}
     ]
 )
@@ -70,6 +72,20 @@ model_params = {
     "firm_wage_rate": UserSettableParameter(
         "slider", "Initial Daily Wage Rate",
         value=70,
+        min_value=1,
+        max_value=1000,
+        step=1
+    ),
+    "jg_goods_price": UserSettableParameter(
+        "slider", "JG Goods Price",
+        value=50,
+        min_value=1,
+        max_value=1000,
+        step=1
+    ),
+    "jg_wage_rate": UserSettableParameter(
+        "slider", "JG Daily Wage Rate",
+        value=50,
         min_value=1,
         max_value=1000,
         step=1

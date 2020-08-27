@@ -25,6 +25,8 @@ class Scheduler:
         self.steps = 0
         self.firms = self.model.firms.copy()
         self.households = self.model.households.copy()
+        # Treat the JG as a firm for scheduling purposes
+        self.firms.append(self.model.job_guarantee)
 
     def is_month_start(self) -> bool:
         """
