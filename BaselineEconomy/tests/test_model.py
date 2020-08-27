@@ -22,36 +22,47 @@ def test_model_parameters(households, firms):
 
 def test_model_step():
     model = BaselineEconomyModel()
-    # No money in system, nothing should happen
     old_firms = model.firms
     old_hh = model.households
+    old_jg = model.job_guarantee
     # Model starts in month start mode
     assert old_firms[0].model.schedule.is_month_start()
     assert old_hh[0].model.schedule.is_month_start()
+    assert old_jg.model.schedule.is_month_start()
     assert not old_firms[0].model.schedule.is_month_end()
     assert not old_hh[0].model.schedule.is_month_end()
+    assert not old_jg.model.schedule.is_month_end()
     # Next 19 days should be neither start nor end
     for _ in range(model.month_length - 2):
         model.step()
         assert model.firms == old_firms
         assert model.households == old_hh
+        assert model.job_guarantee == old_jg
         assert not old_firms[0].model.schedule.is_month_start()
         assert not old_hh[0].model.schedule.is_month_start()
+        assert not old_jg.model.schedule.is_month_start()
         assert not old_firms[0].model.schedule.is_month_end()
         assert not old_hh[0].model.schedule.is_month_end()
+        assert not old_jg.model.schedule.is_month_end()
     # Next day should be month end
     model.step()
     assert model.firms == old_firms
     assert model.households == old_hh
+    assert model.job_guarantee == old_jg
     assert not old_firms[0].model.schedule.is_month_start()
     assert not old_hh[0].model.schedule.is_month_start()
+    assert not old_jg.model.schedule.is_month_start()
     assert old_firms[0].model.schedule.is_month_end()
     assert old_hh[0].model.schedule.is_month_end()
+    assert old_jg.model.schedule.is_month_end()
     # Then back to beginning of month again
     model.step()
     assert model.firms == old_firms
     assert model.households == old_hh
+    assert model.job_guarantee == old_jg
     assert old_firms[0].model.schedule.is_month_start()
     assert old_hh[0].model.schedule.is_month_start()
+    assert old_jg.model.schedule.is_month_start()
     assert not old_firms[0].model.schedule.is_month_end()
     assert not old_hh[0].model.schedule.is_month_end()
+    assert not old_jg.model.schedule.is_month_end()
