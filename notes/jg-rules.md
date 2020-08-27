@@ -28,7 +28,7 @@ Within the model the guaranteed job is Firm 101. Every person knows about
 the output from the guaranteed job and therefore maintains an additional
 Type A (goods purchase) relationship with Firm 101. 
 
-Similarly during a serach for a new job, an individual will always
+Similarly during a search for a new job, an individual will always
 consider the guaranteed job in addition to the private firms they have
 chosen to apply to.
 
@@ -46,7 +46,7 @@ An employee of Firm 101 is assumed to be unsatisfied with the position
 and will search for a new job on that basis.
 
 Once a household searching for a job has completed looking through
-private firms, it will perform and addtional check against Firm 101.
+private firms, it will perform an additional check against Firm 101.
 
 The trading connection changes only apply to the list of private preferred
 suppliers (type A connections). Firm 101 is excluded. This represents

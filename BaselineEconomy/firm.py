@@ -24,11 +24,6 @@ class FirmConfig:
     # Value not stated in paper
     initial_inventory = 0
 
-    # Initial wage rate at t=0
-    # Required due to Eq (5)
-    # Value not stated in paper
-    initial_wage_rate = 63 * initial_goods_price
-
     # The expected demand for goods per month
     # Required due to Eq (6) and Eq (7)
     # Value not stated in paper
@@ -67,6 +62,11 @@ class FirmConfig:
     # Percentage of income to reserve to cover bad times
     chi = 0.1
 
+    # Initial wage rate at t=0
+    # Required due to Eq (5)
+    # Value not stated in paper
+    initial_wage_rate = 21 * lambda_val * initial_goods_price
+
 
 # FUNCTIONS
 
@@ -100,7 +100,6 @@ class BaselineEconomyFirm(Agent):
 
     liquidity: amount of monetary units firm posseses
     goods_price: the price of each item in the inventory
-    inventory: amount of goods on hand
     wage_rate: the price the firm will pay for labour power
     """
 
@@ -166,11 +165,15 @@ class BaselineEconomyFirm(Agent):
         Changes the wage rates up or down
         Rounds up to the nearest whole money unit on rising wage
         Rounds down to zero on falling wages (Interns)
+        Has to be raised to at least the JG wage, or we'll get no bids
         """
         if self.should_raise_wage():
             self.raised_wage = True
             self.wage_rate *= (1 + wage_adjustment(self.random))
-            self.wage_rate = max(1, math.ceil(self.wage_rate))
+            self.wage_rate = max(
+                self.model.job_guarantee.wage_rate,
+                math.ceil(self.wage_rate)
+            )
         elif self.should_lower_wage():
             self.lowered_wage = True
             self.wage_rate *= (1 - wage_adjustment(self.random))
@@ -245,8 +248,7 @@ class BaselineEconomyFirm(Agent):
         # Slash wages and try again next month
         if self.liquidity < num_workers:
             self.wage_rate = 0
-            return
-        if self.liquidity < num_workers * self.wage_rate:
+        elif self.liquidity < num_workers * self.wage_rate:
             self.wage_rate = self.liquidity // num_workers
         for hh in self.workers:
             hh.liquidity += self.wage_rate

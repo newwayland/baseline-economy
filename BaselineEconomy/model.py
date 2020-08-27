@@ -1,5 +1,6 @@
 from .household import BaselineEconomyHousehold, HouseholdConfig
 from .firm import BaselineEconomyFirm, FirmConfig
+from .firm_jg import BaselineEconomyFirmJG, FirmJGConfig
 from .schedule import Scheduler
 from mesa.datacollection import DataCollector
 from mesa import Model
@@ -16,10 +17,7 @@ class BaselineEconomyModel(Model):
     baseline model. Journal of Economic Behavior & Organization.
     86.10.1016/j.jebo.2012.12.021.
 
-    In the base model households select firms to buy goods from randomly
-    from their list of preferred suppliers. In this variant households
-    always go to the cheapest firm.
-
+    This version has endogenous money delivered via a Job Guarantee
     """
 
     def __init__(
@@ -30,6 +28,8 @@ class BaselineEconomyModel(Model):
         firm_liquidity=FirmConfig.initial_liquidity,
         firm_goods_price=FirmConfig.initial_goods_price,
         firm_wage_rate=None,
+        jg_goods_price=FirmJGConfig.initial_goods_price,
+        jg_wage_rate=None,
         seed=None
     ) -> None:
         super().__init__()
@@ -46,6 +46,15 @@ class BaselineEconomyModel(Model):
                     if firm_wage_rate is not None
                     else FirmConfig.initial_wage_rate)
             ) for i in range(num_firms)]
+        self.job_guarantee = BaselineEconomyFirmJG(
+            1101,
+            self,
+            FirmJGConfig.initial_liquidity,
+            jg_goods_price,
+            (jg_wage_rate * self.month_length
+                if jg_wage_rate is not None
+                else FirmJGConfig.initial_wage_rate)
+        )
         self.households = [
             BaselineEconomyHousehold(
                 i,
@@ -59,10 +68,12 @@ class BaselineEconomyModel(Model):
         self.datacollector = DataCollector(
             model_reporters={
                 "Employed": count_employed,
+                "Private Employed": count_private_employed,
                 "On Notice": count_notice,
                 "Poverty Level": count_poverty,
                 "Unsatisfied Demand": percent_unsatisfied_demand,
                 "Inventory": sum_inventory,
+                "JG Inventory": jg_inventory,
                 "Price": average_goods_price,
                 "Wage": average_wage_rate,
                 "HH Savings": sum_hh_savings,
@@ -109,6 +120,13 @@ def count_poverty(model) -> int:
     )
 
 
+def count_jobguarantee(model) -> int:
+    """
+    Number of households on job guarantee
+    """
+    return len(model.job_guarantee.workers)
+
+
 def count_employed(model) -> int:
     """
     Number of households employed
@@ -116,6 +134,10 @@ def count_employed(model) -> int:
     return sum(
         [hh.employer is not None for hh in model.households]
     )
+
+
+def count_private_employed(model) -> int:
+    return count_employed(model) - count_jobguarantee(model)
 
 
 def count_notice(model) -> int:
@@ -195,6 +217,13 @@ def sum_inventory(model) -> int:
     return sum(
         [f.inventory for f in model.firms]
     )
+
+
+def jg_inventory(model) -> int:
+    """
+    Stock in hand at the JG
+    """
+    return model.job_guarantee.inventory
 
 
 def average_goods_price(model) -> float:

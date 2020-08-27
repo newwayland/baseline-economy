@@ -102,6 +102,7 @@ class BaselineEconomyHousehold(Agent):
             model.firms,
             HouseholdConfig.num_preferred_suppliers
         )
+        self.update_all_suppliers()
         self.employer = None
         self.blackmarked_firms = []
         self.reset_monthly_stats()
@@ -154,8 +155,9 @@ class BaselineEconomyHousehold(Agent):
         # Change supplier if the price is right
         new_firm = self.select_new_firm()
         if new_firm.goods_price < change_price:
-            self.found_cheaper_vendor = True
             self.preferred_suppliers[target_index] = new_firm
+            self.update_all_suppliers()
+            self.found_cheaper_vendor = True
 
     def find_better_vendor(self) -> None:
         """
@@ -171,6 +173,7 @@ class BaselineEconomyHousehold(Agent):
         try:
             target_index = self.preferred_suppliers.index(target_firm)
             self.preferred_suppliers[target_index] = self.select_new_firm()
+            self.update_all_suppliers()
             self.found_better_vendor = True
         except ValueError:
             self.vendor_already_replaced = True
@@ -192,6 +195,12 @@ class BaselineEconomyHousehold(Agent):
                 potential_employer.hire(self)
                 self.found_new_job = True
                 return
+        # Look at guaranteed job
+        if self.is_acceptable_job_offer(self.model.job_guarantee):
+            if self.employer is not None:
+                self.employer.quit_job(self)
+            self.model.job_guarantee.hire(self)
+            self.found_new_job = True
 
     def plan_consumption(self) -> None:
         """
@@ -225,16 +234,16 @@ class BaselineEconomyHousehold(Agent):
         """
         Buy goods from firms
         """
-        # Put the preferred suppliers in price order
-        self.preferred_suppliers.sort(key=attrgetter("goods_price"))
+        # Put the list of suppliers in price order
+        self.all_suppliers.sort(key=attrgetter("goods_price"))
         # Obtain the required amount of goods from
-        # the preferred suppliers
+        # the suppliers
         required_amount = self.current_demand
         satisfaction_amount = (math.floor(
                 required_amount *
                 (1 - HouseholdConfig.satisfaction_fraction)
         ))
-        for vendor in self.preferred_suppliers:
+        for vendor in self.all_suppliers:
             transaction_amount = self.check_vendor_stock(
                 vendor,
                 required_amount
@@ -249,7 +258,6 @@ class BaselineEconomyHousehold(Agent):
             # has bought enough stuff
             if required_amount <= satisfaction_amount:
                 return
-        # Record unsatisfied demand
         self.unsatisfied_demand += required_amount - satisfaction_amount
 
 # MONTH END
@@ -303,7 +311,8 @@ class BaselineEconomyHousehold(Agent):
         """
         available_amount = firm.inventory
         affordable_amount = self.get_affordable_amount(firm)
-        if (available_amount < required_amount and
+        if (firm in self.preferred_suppliers and
+                available_amount < required_amount and
                 available_amount < affordable_amount):
             self.blackmark(firm, required_amount)
         return min(
@@ -377,6 +386,13 @@ class BaselineEconomyHousehold(Agent):
         blackmarks = next(choice_zip)
         return self.random.choices(firm_list, weights=blackmarks)[0]
 
+    def update_all_suppliers(self) -> None:
+        """
+        Add the Job Guarantee firm to the list of preferred suppliers
+        """
+        self.all_suppliers = self.preferred_suppliers.copy()
+        self.all_suppliers.append(self.model.job_guarantee)
+
 # QUERIES
 
     def is_unhappy_at_work(self) -> bool:
@@ -386,8 +402,15 @@ class BaselineEconomyHousehold(Agent):
         return (
             self.is_unemployed() or
             self.is_paid_too_little() or
+            self.on_job_guarantee or
             self.with_probability(HouseholdConfig.pi)
         )
+
+    def on_job_guarantee(self) -> bool:
+        """
+        Is the household on the job guarantee?
+        """
+        return self.employer == self.model.job_guarantee
 
     def is_paid_too_little(self) -> bool:
         """

@@ -118,7 +118,7 @@ def test_manage_workforce_fire():
     assert len(firm.workers) == len(hh) - 2
 
 
-price_multiple = 1000
+price_multiple = 100 * FirmConfig.lambda_val * 21
 
 
 def test_wage_increase():
@@ -133,10 +133,10 @@ def test_wage_increase():
     firm.wage_rate = 0
     assert firm.should_raise_wage()
     firm.set_wage_rate()
-    assert firm.wage_rate == 1
+    assert firm.wage_rate == firm.model.job_guarantee.wage_rate
     assert firm.should_raise_wage()
     firm.set_wage_rate()
-    assert firm.wage_rate == 2
+    assert firm.wage_rate > firm.model.job_guarantee.wage_rate
 
 
 def test_wage_decrease():
