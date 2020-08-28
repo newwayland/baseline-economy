@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: price-shopping
+  name: jg
   labels:
-    run: price-shopping
+    run: jg
 spec:
   selector:
-    run: price-shopping
+    run: jg
   ports:
     - name: web
       port: 80
-      targetPort: price-shopping
+      targetPort: jg
