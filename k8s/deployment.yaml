@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: price-shopping
+  name: jg
 spec:
   replicas: 2
   selector:
     matchLabels:
-      run: price-shopping
+      run: jg
   template:
     metadata:
       labels:
-        run: price-shopping
+        run: jg
     spec:
       containers:
-      - name: price-shopping
+      - name: jg
         image: baseline
         resources:
           requests:
@@ -21,14 +21,14 @@ spec:
             memory: "50Mi"
         ports:
         - containerPort: 8521
-          name: price-shopping
+          name: jg
           protocol: TCP
         livenessProbe:
           httpGet:
             path: /healthz
-            port: price-shopping
+            port: jg
         readinessProbe:
           httpGet:
             path: /
-            port: price-shopping
+            port: jg
 
