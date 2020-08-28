@@ -79,7 +79,7 @@ model_params = {
     "jg_goods_price": UserSettableParameter(
         "slider", "JG Goods Price",
         value=50,
-        min_value=1,
+        min_value=0,
         max_value=1000,
         step=1
     ),
