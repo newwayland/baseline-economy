@@ -48,7 +48,7 @@ model_params = {
     "num_households": 1000, "num_firms": 100,
     "household_liquidity": UserSettableParameter(
         "slider", "Household Starting Money",
-        value=0,
+        value=3200,
         min_value=0,
         max_value=50000,
         step=100
@@ -62,14 +62,14 @@ model_params = {
     ),
     "firm_goods_price": UserSettableParameter(
         "slider", "Initial Goods Price",
-        value=30,
+        value=27,
         min_value=1,
         max_value=1000,
         step=1
     ),
     "firm_wage_rate": UserSettableParameter(
         "slider", "Initial Daily Wage Rate",
-        value=90,
+        value=70,
         min_value=1,
         max_value=1000,
         step=1
