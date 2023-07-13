@@ -203,8 +203,8 @@
 8.  Open positions persist month to month until filled or cancelled.
 
 9.  The product of the month length(21), the labour supply
-    (l<sub>h</sub)>) and the productivity technology factor(λ) is
-    divided into the wage rate(w<sub>f</sub>>). This fits with the fixed
+    (l<sub>h</sub>) and the productivity technology factor(λ) is
+    divided into the wage rate(w<sub>f</sub>). This fits with the fixed
     labour supply assumption.
 
 10. Liquidity and inventory are managed as integers. As are goods prices
