@@ -144,7 +144,7 @@ class BaselineEconomyHousehold(Agent):
         self.looked_for_cheaper_vendor = True
         # Pick an existing supplier to market test and calculate the
         # price the new supplier needs to beat
-        supplier_index = range(0, len(self.preferred_suppliers) - 1)
+        supplier_index = range(len(self.preferred_suppliers))
         target_index = self.random.choice(supplier_index)
         change_price = (
             self.preferred_suppliers[target_index].goods_price *

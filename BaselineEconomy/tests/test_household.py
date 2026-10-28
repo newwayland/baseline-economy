@@ -155,6 +155,57 @@ def test_find_cheaper_vendor():
     assert any([o.goods_price != 100 for o in hh.preferred_suppliers])
 
 
+def test_find_cheaper_vendor_replaces_last_supplier():
+    hh = initial_household()
+    preferred = list(hh.model.firms[:7])
+    hh.preferred_suppliers = preferred
+
+    replacement = hh.model.firms[9]
+    replacement.goods_price = 99
+
+    # Make all current suppliers expensive except the last one is the one we
+    # want to replace.
+    for firm in preferred[:-1]:
+        firm.goods_price = 100
+    preferred[-1].goods_price = 1000
+
+    # Force the random choice to select the last index
+    def fake_choice(seq):
+        if isinstance(seq, range):
+            return seq[-1]
+        return replacement
+
+    hh.random.choice = fake_choice
+
+    hh.find_cheaper_vendor()
+
+    assert hh.preferred_suppliers[-1] == replacement
+
+
+def test_find_cheaper_vendor_replaces_first_supplier():
+    hh = initial_household()
+    preferred = list(hh.model.firms[:7])
+    hh.preferred_suppliers = preferred
+
+    replacement = hh.model.firms[9]
+    replacement.goods_price = 99
+
+    for firm in preferred[1:]:
+        firm.goods_price = 100
+    preferred[0].goods_price = 1000
+
+    def fake_choice(seq):
+        if isinstance(seq, range):
+            return 0
+        return replacement
+
+    hh.random.choice = fake_choice
+
+    hh.find_cheaper_vendor()
+
+    assert hh.preferred_suppliers[0] == replacement
+
+
 def test_find_better_vendor():
     hh = initial_household()
     assert not hh.blackmarked_firms
