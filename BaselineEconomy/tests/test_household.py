@@ -329,3 +329,28 @@ def test_replaced_firm_is_skipped():
     hh.find_better_vendor()
     assert hh.preferred_suppliers == org
     assert len(hh.blackmarked_firms) == 1
+
+
+def test_jg_worker_is_unhappy_without_other_reasons(monkeypatch):
+    hh = initial_household()
+    hh.employer = hh.model.job_guarantee
+    hh.employer.wage_rate = 10
+    hh.reservation_wage = 10  # not paid too little
+    # ensure all other branches are false
+    monkeypatch.setattr(hh, "is_unemployed", lambda: False)
+    monkeypatch.setattr(hh, "is_paid_too_little", lambda: False)
+    monkeypatch.setattr(hh, "with_probability", lambda chance: False)
+
+    assert hh.is_unhappy_at_work() is True
+
+
+def test_non_jg_worker_is_happy_without_other_reasons(monkeypatch):
+    hh = initial_household()
+    hh.employer = hh.select_new_employer()
+    hh.employer.wage_rate = 10
+    hh.reservation_wage = 10
+    monkeypatch.setattr(hh, "is_unemployed", lambda: False)
+    monkeypatch.setattr(hh, "is_paid_too_little", lambda: False)
+    monkeypatch.setattr(hh, "with_probability", lambda chance: False)
+
+    assert hh.is_unhappy_at_work() is False

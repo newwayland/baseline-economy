@@ -404,7 +404,7 @@ class BaselineEconomyHousehold(Agent):
         return (
             self.is_unemployed() or
             self.is_paid_too_little() or
-            self.on_job_guarantee or
+            self.on_job_guarantee() or
             self.with_probability(HouseholdConfig.pi)
         )
 
